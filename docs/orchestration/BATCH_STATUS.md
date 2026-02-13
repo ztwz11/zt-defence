@@ -84,11 +84,20 @@
 | R React HUD binding | worker-agent | Completed | `src/runtime/framework-bindings/react-hud-binding.js`, `tests/runtime-bindings/react-hud-binding.test.js` | 4 passed |
 | Batch 9 integration | codex-main | Completed | `src/main/runtime/app/**`, `src/runtime/index.js`, `src/runtime/framework-bindings/index.js`, `tests/runtime-app/**` | runtime/runtime-app/runtime-bindings pass |
 
+## Batch 10 Completion (balance auto-tuning loop)
+
+| Module | Owner | Status | Owned Paths | Tests |
+| --- | --- | --- | --- | --- |
+| S objective scorer | worker-agent | Completed | `tools/balance/tuning-objective.js`, `tests/balance/tuning-objective.test.js` | 4 passed |
+| T candidate search + CLI | worker-agent | Completed | `tools/balance/auto-tune.js`, `tools/balance/run-auto-tune.js`, `tests/balance/auto-tune.test.js` | 3 passed |
+| Batch 10 integration | codex-main | Completed | `README.md`, `docs/orchestration/BATCH_STATUS.md` | `node --test tests/balance/*.test.js` pass |
+
 ## Remaining Blockers
 
 1. 캔버스 렌더/입력 루프의 실기기 성능(모바일 30fps) 측정 기준 수립.
-2. 밸런스 자동 튜닝 루프(시드 배치 + 파라미터 서치)를 프로브/시뮬레이터에 결합.
+2. 자동 튜닝 결과를 릴리즈 게이트/CI 임계치와 연결하는 운영 루프 구성.
 
 ## Next Parallel Batch Plan
 
-1. Batch 10: 밸런스 자동 튜닝 루프(시드 배치 + 파라미터 서치)
+1. Batch 11: 실기기 성능 측정 기준 확정 + 측정 자동화 리포트
+2. Batch 12: 자동 튜닝 결과 기반 밸런스 게이트(합격/경고/차단) 추가

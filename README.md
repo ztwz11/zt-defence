@@ -17,6 +17,7 @@
 - 스키마/샘플 일괄 검증: `python tools/validate-schemas.py`
 - 릴리즈 준비 통합 체크: `python tools/check-release-readiness.py`
 - 밸런스 시뮬레이션: `node tools/balance/run-balance-sim.js --seeds=200 --wave-max=20 --chapter=chapter_1`
+- 밸런스 자동 튜닝: `node tools/balance/run-auto-tune.js --chapter=chapter_1 --wave-max=20 --seeds=200 --candidates=24 --search-seed=2026 --target-clear=0.55 --target-wave=14 --max-fail=0.35`
 - 성능 프로브 + 임계치 체크: `node tools/perf/run-perf-probe.js --iterations=200 | node tools/perf/check-thresholds.js`
 
 ## 포함 파일
