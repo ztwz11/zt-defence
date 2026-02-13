@@ -30,6 +30,7 @@
 - `UI_STATE_CONTRACT.md` — 상태 전이/HUD 바인딩 계약
 - `IMPLEMENTATION_BACKLOG_REFINED.md` — 정합성 반영 백로그
 - `GO_NO_GO_CHECKLIST.md` — 구현 착수 체크리스트
+- `orchestration/BATCH_STATUS.md` — 병렬 오케스트레이션 배치/게이트 상태
 
 ## 폴더 구조
 - `docs/` : 단계별 기획 문서(마크다운)
