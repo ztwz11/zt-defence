@@ -69,12 +69,19 @@
 | M scene/hud connectors | worker-agent | Completed | `src/runtime/connectors/**`, `tests/runtime-connectors/**` | 6 passed |
 | N M0 runtime app bootstrap | worker-agent | Completed | `src/main/runtime/app/**`, `tests/runtime-app/**` | 3 passed |
 
+## Batch 8 Completion (performance + balance automation)
+
+| Module | Owner | Status | Owned Paths | Tests |
+| --- | --- | --- | --- | --- |
+| O balance simulator toolkit | worker-agent | Completed | `tools/balance/**`, `tests/balance/**` | 7 passed |
+| P performance probe toolkit | worker-agent | Completed | `tools/perf/**`, `tests/perf/**` | 9 passed |
+
 ## Remaining Blockers
 
 1. Phaser/React 실제 프레임워크 객체 연결(현재는 framework-agnostic callback 파사드).
-2. 성능 목표(모바일 30fps) 계측 자동화.
+2. 캔버스 렌더/입력 루프의 실기기 성능(모바일 30fps) 측정 기준 수립.
 
 ## Next Parallel Batch Plan
 
-1. Batch 8: Phaser/React 실제 런타임 객체 바인딩 + 화면 루프
-2. Batch 9: 성능/밸런스 튜닝 자동화
+1. Batch 9: Phaser Scene + React HUD 실제 객체 바인딩
+2. Batch 10: 밸런스 자동 튜닝 루프(시드 배치 + 파라미터 서치)

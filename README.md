@@ -15,6 +15,9 @@
 
 ## 검증 커맨드
 - 스키마/샘플 일괄 검증: `python tools/validate-schemas.py`
+- 릴리즈 준비 통합 체크: `python tools/check-release-readiness.py`
+- 밸런스 시뮬레이션: `node tools/balance/run-balance-sim.js --seeds=200 --wave-max=20 --chapter=chapter_1`
+- 성능 프로브 + 임계치 체크: `node tools/perf/run-perf-probe.js --iterations=200 | node tools/perf/check-thresholds.js`
 
 ## 포함 파일
 - `AGENTS.md` : Codex 에이전트 가이드(프로젝트 아키텍처/규칙)
