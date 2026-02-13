@@ -1,0 +1,62 @@
+{
+  "saveVersion": "1.0.0",
+  "contentVersion": "0.1.0",
+  "updatedAt": "2026-02-13T12:34:00Z",
+  "runId": "run_20260213_001",
+  "runSeed": 123456789,
+  "chapterId": "chapter_1",
+  "phase": "Prepare",
+  "waveNumber": 3,
+  "gateHp": 18,
+  "gold": 14,
+  "boardUnits": [
+    {
+      "instanceId": "u_001",
+      "unitId": "knight_sword",
+      "star": 2,
+      "slot": {
+        "x": 1,
+        "y": 2
+      },
+      "currentHp": 240
+    },
+    {
+      "instanceId": "u_002",
+      "unitId": "archer",
+      "star": 1,
+      "slot": {
+        "x": 2,
+        "y": 2
+      },
+      "currentHp": 90
+    }
+  ],
+  "benchUnits": [
+    {
+      "instanceId": "u_003",
+      "unitId": "fire_mage",
+      "star": 1,
+      "currentHp": 80
+    }
+  ],
+  "relics": [
+    "relic_bonus_gold",
+    "relic_discount_reroll"
+  ],
+  "activeSynergies": [
+    {
+      "synergyId": "syn_knights",
+      "activeThreshold": 2
+    }
+  ],
+  "rngState": {
+    "algo": "xorshift32",
+    "state": 987654321
+  },
+  "eventLogCursor": 420,
+  "stats": {
+    "kills": 51,
+    "totalDamage": 1240,
+    "leaks": 2
+  }
+}

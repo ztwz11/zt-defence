@@ -1,0 +1,38 @@
+{
+  "saveVersion": "1.0.0",
+  "contentVersion": "0.1.0",
+  "updatedAt": "2026-02-13T12:00:00Z",
+  "playerId": "local-profile",
+  "metaCurrencies": {
+    "medal": 12,
+    "supply": 8,
+    "bonsikExp": 34
+  },
+  "upgrades": [
+    {
+      "id": "wall_hp_1",
+      "level": 1
+    },
+    {
+      "id": "start_gold_1",
+      "level": 2
+    }
+  ],
+  "unlockedContent": {
+    "units": [
+      "knight_sword",
+      "archer"
+    ],
+    "relics": [
+      "relic_bonus_gold"
+    ],
+    "chapters": [
+      "chapter_1"
+    ]
+  },
+  "settings": {
+    "sfx": true,
+    "vibration": true,
+    "lowFxMode": false
+  }
+}

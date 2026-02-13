@@ -20,6 +20,17 @@
 14. `prompts/13_CODEX_PROMPT_PACK.md` — Codex에게 바로 붙여넣을 프롬프트 묶음
 15. `schemas/*` , `examples/*` — JSON 스키마/예시(데이터-드리븐 구현용)
 
+## 정합성/실행 부록 (신규)
+
+- `TECH_SPEC_ALIGNMENT.md` — 문서/스키마/샘플 단일 기준 정렬
+- `SCHEMA_COVERAGE_MATRIX.md` — 요구사항 대비 스키마 커버리지 표
+- `CONTENT_INTEGRITY_RULES.md` — 참조/의미 무결성 검증 규칙
+- `RUN_SAVE_CONTRACT.md` — 저장/복구 데이터 계약
+- `BALANCE_BASELINE.md` — M0 수치 기준선
+- `UI_STATE_CONTRACT.md` — 상태 전이/HUD 바인딩 계약
+- `IMPLEMENTATION_BACKLOG_REFINED.md` — 정합성 반영 백로그
+- `GO_NO_GO_CHECKLIST.md` — 구현 착수 체크리스트
+
 ## 폴더 구조
 - `docs/` : 단계별 기획 문서(마크다운)
 - `docs/schemas/` : 컨텐츠 정의 스키마(JSON Schema)

@@ -1,0 +1,35 @@
+{
+  "saveVersion": "1.0.0",
+  "contentVersion": "0.1.0",
+  "updatedAt": "2026-02-13T12:35:00Z",
+  "entries": [
+    {
+      "runId": "run_20260213_001",
+      "runSeed": 123456789,
+      "chapterId": "chapter_1",
+      "reachedWave": 5,
+      "result": "fail",
+      "durationSec": 621,
+      "highestDpsUnitId": "archer",
+      "metaRewards": {
+        "medal": 12,
+        "supply": 3
+      },
+      "finishedAt": "2026-02-13T12:35:00Z"
+    },
+    {
+      "runId": "run_20260212_004",
+      "runSeed": 22334455,
+      "chapterId": "chapter_1",
+      "reachedWave": 7,
+      "result": "clear",
+      "durationSec": 703,
+      "highestDpsUnitId": "fire_mage",
+      "metaRewards": {
+        "medal": 19,
+        "supply": 5
+      },
+      "finishedAt": "2026-02-12T18:03:00Z"
+    }
+  ]
+}

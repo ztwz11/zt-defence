@@ -1,0 +1,244 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/schemas/run_save.schema.json",
+  "title": "RunSave",
+  "type": "object",
+  "required": [
+    "saveVersion",
+    "contentVersion",
+    "updatedAt",
+    "runId",
+    "runSeed",
+    "chapterId",
+    "phase",
+    "waveNumber",
+    "gateHp",
+    "gold",
+    "boardUnits",
+    "benchUnits",
+    "relics",
+    "activeSynergies",
+    "rngState",
+    "eventLogCursor",
+    "stats"
+  ],
+  "properties": {
+    "saveVersion": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "contentVersion": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "runId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "runSeed": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "chapterId": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[a-z][a-z0-9_\\-\\.]*$",
+      "description": "lower_snake_case 권장"
+    },
+    "phase": {
+      "type": "string",
+      "enum": [
+        "Prepare",
+        "Combat",
+        "Reward",
+        "BossIntro",
+        "Result"
+      ]
+    },
+    "waveNumber": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "gateHp": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "gold": {
+      "type": "number",
+      "minimum": 0
+    },
+    "boardUnits": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "instanceId",
+          "unitId",
+          "star",
+          "slot",
+          "currentHp"
+        ],
+        "properties": {
+          "instanceId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "unitId": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[a-z][a-z0-9_\\-\\.]*$",
+            "description": "lower_snake_case 권장"
+          },
+          "star": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 3
+          },
+          "slot": {
+            "type": "object",
+            "required": [
+              "x",
+              "y"
+            ],
+            "properties": {
+              "x": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "y": {
+                "type": "integer",
+                "minimum": 0
+              }
+            },
+            "additionalProperties": false
+          },
+          "currentHp": {
+            "type": "number",
+            "minimum": 0
+          }
+        },
+        "additionalProperties": false
+      },
+      "default": []
+    },
+    "benchUnits": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "instanceId",
+          "unitId",
+          "star",
+          "currentHp"
+        ],
+        "properties": {
+          "instanceId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "unitId": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[a-z][a-z0-9_\\-\\.]*$",
+            "description": "lower_snake_case 권장"
+          },
+          "star": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 3
+          },
+          "currentHp": {
+            "type": "number",
+            "minimum": 0
+          }
+        },
+        "additionalProperties": false
+      },
+      "default": []
+    },
+    "relics": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "pattern": "^[a-z][a-z0-9_\\-\\.]*$",
+        "description": "lower_snake_case 권장"
+      },
+      "default": []
+    },
+    "activeSynergies": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "synergyId",
+          "activeThreshold"
+        ],
+        "properties": {
+          "synergyId": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[a-z][a-z0-9_\\-\\.]*$",
+            "description": "lower_snake_case 권장"
+          },
+          "activeThreshold": {
+            "type": "integer",
+            "minimum": 1
+          }
+        },
+        "additionalProperties": false
+      },
+      "default": []
+    },
+    "rngState": {
+      "type": "object",
+      "required": [
+        "algo",
+        "state"
+      ],
+      "properties": {
+        "algo": {
+          "type": "string",
+          "minLength": 1
+        },
+        "state": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": false
+    },
+    "eventLogCursor": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "stats": {
+      "type": "object",
+      "required": [
+        "kills",
+        "totalDamage",
+        "leaks"
+      ],
+      "properties": {
+        "kills": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "totalDamage": {
+          "type": "number",
+          "minimum": 0
+        },
+        "leaks": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

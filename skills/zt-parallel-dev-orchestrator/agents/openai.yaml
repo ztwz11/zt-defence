@@ -1,0 +1,5 @@
+interface:
+  display_name: "ZT Parallel Dev Orchestrator"
+  short_description: "Sub-agent parallel module delivery for zt-defence"
+  default_prompt: "Use $zt-parallel-dev-orchestrator to split this milestone into parallel modules and orchestrate sub-agents with integration gates."
+

@@ -7,6 +7,15 @@
 2) `docs/00_INDEX.md` 순서대로 읽히기
 3) `docs/prompts/13_CODEX_PROMPT_PACK.md` 의 프롬프트를 단계별로 실행
 
+## 구현 전 필수 정합성 체크(신규)
+1) `docs/TECH_SPEC_ALIGNMENT.md` 확인
+2) `docs/SCHEMA_COVERAGE_MATRIX.md` 와 `docs/CONTENT_INTEGRITY_RULES.md` 확인
+3) `docs/RUN_SAVE_CONTRACT.md` / `docs/UI_STATE_CONTRACT.md` / `docs/BALANCE_BASELINE.md` 확인
+4) `docs/GO_NO_GO_CHECKLIST.md`로 GO/NO-GO 판정
+
+## 검증 커맨드
+- 스키마/샘플 일괄 검증: `python tools/validate-schemas.py`
+
 ## 포함 파일
 - `AGENTS.md` : Codex 에이전트 가이드(프로젝트 아키텍처/규칙)
 - `Ludo_Project_Concept_RNG_Defense.pdf` : Ludo용 컨셉 PDF(에셋/스프라이트 파이프라인 참고)

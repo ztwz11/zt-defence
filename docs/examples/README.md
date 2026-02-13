@@ -10,5 +10,8 @@
 - `waves.sample.json` : 웨이브 1~5 예시(5는 보스)
 - `relics.sample.json` : 유물 5종 예시
 - `economy.sample.json` : 런 경제/티어 확률 예시
+- `profile.sample.json` : 메타 프로필 저장 예시
+- `run_save.sample.json` : 진행 중 런 저장 예시
+- `run_history.sample.json` : 런 기록 저장 예시
 
 > 주의: 실제 구현에서는 파일 간 id 참조 무결성 검증이 필요하다.

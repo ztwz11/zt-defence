@@ -1,0 +1,141 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/schemas/profile.schema.json",
+  "title": "Profile",
+  "type": "object",
+  "required": [
+    "saveVersion",
+    "contentVersion",
+    "updatedAt",
+    "playerId",
+    "metaCurrencies",
+    "upgrades",
+    "unlockedContent",
+    "settings"
+  ],
+  "properties": {
+    "saveVersion": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "contentVersion": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "playerId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "metaCurrencies": {
+      "type": "object",
+      "required": [
+        "medal",
+        "supply",
+        "bonsikExp"
+      ],
+      "properties": {
+        "medal": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "supply": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "bonsikExp": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": false
+    },
+    "upgrades": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "level"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[a-z][a-z0-9_\\-\\.]*$",
+            "description": "lower_snake_case 권장"
+          },
+          "level": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "additionalProperties": false
+      },
+      "default": []
+    },
+    "unlockedContent": {
+      "type": "object",
+      "required": [
+        "units",
+        "relics",
+        "chapters"
+      ],
+      "properties": {
+        "units": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[a-z][a-z0-9_\\-\\.]*$",
+            "description": "lower_snake_case 권장"
+          },
+          "default": []
+        },
+        "relics": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[a-z][a-z0-9_\\-\\.]*$",
+            "description": "lower_snake_case 권장"
+          },
+          "default": []
+        },
+        "chapters": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "settings": {
+      "type": "object",
+      "required": [
+        "sfx",
+        "vibration",
+        "lowFxMode"
+      ],
+      "properties": {
+        "sfx": {
+          "type": "boolean"
+        },
+        "vibration": {
+          "type": "boolean"
+        },
+        "lowFxMode": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

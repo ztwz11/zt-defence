@@ -1,0 +1,107 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/schemas/run_history.schema.json",
+  "title": "RunHistory",
+  "type": "object",
+  "required": [
+    "saveVersion",
+    "contentVersion",
+    "updatedAt",
+    "entries"
+  ],
+  "properties": {
+    "saveVersion": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "contentVersion": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "entries": {
+      "type": "array",
+      "maxItems": 20,
+      "items": {
+        "type": "object",
+        "required": [
+          "runId",
+          "runSeed",
+          "chapterId",
+          "reachedWave",
+          "result",
+          "durationSec",
+          "highestDpsUnitId",
+          "metaRewards",
+          "finishedAt"
+        ],
+        "properties": {
+          "runId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "runSeed": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "chapterId": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[a-z][a-z0-9_\\-\\.]*$",
+            "description": "lower_snake_case 권장"
+          },
+          "reachedWave": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "result": {
+            "type": "string",
+            "enum": [
+              "clear",
+              "fail",
+              "quit"
+            ]
+          },
+          "durationSec": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "highestDpsUnitId": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[a-z][a-z0-9_\\-\\.]*$",
+            "description": "lower_snake_case 권장"
+          },
+          "metaRewards": {
+            "type": "object",
+            "required": [
+              "medal",
+              "supply"
+            ],
+            "properties": {
+              "medal": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "supply": {
+                "type": "integer",
+                "minimum": 0
+              }
+            },
+            "additionalProperties": false
+          },
+          "finishedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
+      "default": []
+    }
+  },
+  "additionalProperties": false
+}
