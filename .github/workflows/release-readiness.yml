@@ -1,0 +1,32 @@
+name: release-readiness
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  release-readiness:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Validate schema/sample files
+        run: python tools/validate-schemas.py
+
+      - name: Run Node test suite
+        run: node --test tests/**/*.test.js
+
+      - name: Run full release-readiness checks
+        run: python tools/check-release-readiness.py

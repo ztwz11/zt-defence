@@ -30,9 +30,9 @@
 2. Gate B (Foundation modules merged): `GREEN`
 3. Gate C (Combat/Run core merged): `GREEN`
 4. Gate D (UI/HUD integrated): `GREEN`
-5. Gate E (Validation + save/replay checks passing): `PARTIAL`
-   - Current module-level + integration checks pass.
-   - CI/workflow hardening and release-grade replay gates are pending.
+5. Gate E (Validation + save/replay checks passing): `GREEN`
+   - Local full checks pass (`schema + tests + deterministic smoke`).
+   - CI workflow for push/pull_request has been added.
 
 ## Batch 3 Completion (E)
 
@@ -40,16 +40,21 @@
 | --- | --- | --- | --- | --- |
 | E (UI State + Integration) | worker-agent | Completed | `src/ui/**`, `src/render/**`, `src/main/**`, `tests/integration/**` | 3 passed |
 
+## Batch 4 Completion (F)
+
+| Module | Owner | Status | Owned Paths | Checks |
+| --- | --- | --- | --- | --- |
+| F (Tooling + CI Checks) | worker-agent | Completed | `tools/**`, `.github/workflows/**` | readiness check pass |
+
 ## Remaining Blockers
 
-1. Module F not started (`tools/**`, `.github/workflows/**` hardening path).
-2. CI/test workflow gating is not defined yet.
-3. Release-grade replay/save-restore e2e scenario is not yet automated.
+1. Ready for feature development batch (M0 gameplay vertical slice).
+2. 추가 e2e 범위 확장(멀티웨이브/중단후재개 장시간)만 남아있음.
 
 ## Next Parallel Batch Plan
 
-1. Batch 4: Module F checks/CI hardening
-   - Owner path: `tools/**`, `.github/workflows/**`
-2. Promote Gate E to full GREEN only after:
-   - schema/test validation wired into CI
-   - replay/load smoke tests automated in release checks
+1. Batch 5: M0 gameplay vertical slices (병렬)
+   - VS1: summon/board interaction
+   - VS2: wave progression and reward loop
+   - VS3: result/history screen integration
+2. Batch 6: polish and performance gates
