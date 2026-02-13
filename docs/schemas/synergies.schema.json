@@ -1,0 +1,125 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/schemas/synergies.schema.json",
+  "title": "Synergies",
+  "type": "object",
+  "required": [
+    "version",
+    "synergies"
+  ],
+  "properties": {
+    "version": {
+      "type": "string"
+    },
+    "synergies": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "tag",
+          "thresholds"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[a-z][a-z0-9_\\-\\.]*$",
+            "description": "lower_snake_case 권장. 예: knight_sword, fire_mage"
+          },
+          "name": {
+            "type": "string"
+          },
+          "tag": {
+            "type": "string",
+            "minLength": 1,
+            "description": "예: faction:knights"
+          },
+          "thresholds": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "required": [
+                "count",
+                "effects"
+              ],
+              "properties": {
+                "count": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "effects": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "type"
+                    ],
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "enum": [
+                          "BuffStat",
+                          "ApplyStatusOnHit",
+                          "ShieldOnWaveStart",
+                          "EconomyBonus"
+                        ]
+                      },
+                      "stat": {
+                        "type": "string",
+                        "enum": [
+                          "atk",
+                          "hp",
+                          "atkSpeed",
+                          "armor",
+                          "resist"
+                        ]
+                      },
+                      "value": {
+                        "type": "number"
+                      },
+                      "valueType": {
+                        "type": "string",
+                        "enum": [
+                          "flat",
+                          "percent"
+                        ],
+                        "default": "percent"
+                      },
+                      "statusId": {
+                        "type": "string",
+                        "minLength": 1,
+                        "pattern": "^[a-z][a-z0-9_\\-\\.]*$",
+                        "description": "lower_snake_case 권장. 예: knight_sword, fire_mage"
+                      },
+                      "chance": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "duration": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "notes": {
+                        "type": "string"
+                      }
+                    },
+                    "additionalProperties": false
+                  }
+                }
+              },
+              "additionalProperties": false
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

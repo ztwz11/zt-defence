@@ -1,0 +1,71 @@
+{
+  "version": "0.1.0",
+  "relics": [
+    {
+      "id": "relic_discount_reroll",
+      "name": "절약의 장부",
+      "rarity": "Common",
+      "effects": [
+        {
+          "type": "DiscountReroll",
+          "value": 1,
+          "notes": "리롤 비용 -1"
+        }
+      ],
+      "description": "보급관이 몰래 빼돌린 장부. 오늘은 좀 아낄 수 있겠지?"
+    },
+    {
+      "id": "relic_bonus_gold",
+      "name": "주머니 속 동전",
+      "rarity": "Common",
+      "effects": [
+        {
+          "type": "BonusGoldPerWave",
+          "value": 2,
+          "notes": "웨이브 시작 골드 +2"
+        }
+      ],
+      "description": "어디서 나온 동전인지 모르지만, 당장 도움이 된다."
+    },
+    {
+      "id": "relic_knights_buff",
+      "name": "기사단의 깃발",
+      "rarity": "Rare",
+      "effects": [
+        {
+          "type": "BuffTaggedUnits",
+          "tag": "faction:knights",
+          "value": 0.12,
+          "notes": "기사단 유닛 공격력 +12%"
+        }
+      ],
+      "description": "깃발이 펄럭이면, 괜히 어깨가 펴진다."
+    },
+    {
+      "id": "relic_fire_focus",
+      "name": "불씨의 반지",
+      "rarity": "Rare",
+      "effects": [
+        {
+          "type": "ModifyTierChance",
+          "value": 0.03,
+          "notes": "T3 등장 확률 +3% (상한 주의)"
+        }
+      ],
+      "description": "손가락 끝이 따뜻해진다. 운도 조금?"
+    },
+    {
+      "id": "relic_merge_assist",
+      "name": "짝수의 미신",
+      "rarity": "Epic",
+      "effects": [
+        {
+          "type": "MergeAssist",
+          "value": 0.1,
+          "notes": "합성 시 10% 확률로 2개로도 합성"
+        }
+      ],
+      "description": "이상하게도, 짝수일 때 일이 잘 풀린다."
+    }
+  ]
+}

@@ -1,0 +1,97 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/schemas/economy.schema.json",
+  "title": "Economy",
+  "type": "object",
+  "required": [
+    "version",
+    "runEconomy"
+  ],
+  "properties": {
+    "version": {
+      "type": "string"
+    },
+    "runEconomy": {
+      "type": "object",
+      "required": [
+        "summonCost",
+        "rerollCost",
+        "gold"
+      ],
+      "properties": {
+        "summonCost": {
+          "type": "number",
+          "minimum": 0
+        },
+        "rerollCost": {
+          "type": "number",
+          "minimum": 0
+        },
+        "gold": {
+          "type": "object",
+          "properties": {
+            "waveStart": {
+              "type": "number",
+              "minimum": 0
+            },
+            "waveClear": {
+              "type": "number",
+              "minimum": 0
+            },
+            "perKill": {
+              "type": "number",
+              "minimum": 0
+            }
+          },
+          "additionalProperties": false
+        },
+        "tierChancesByWave": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": [
+              "waveFrom",
+              "chances"
+            ],
+            "properties": {
+              "waveFrom": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "chances": {
+                "type": "object",
+                "required": [
+                  "T1",
+                  "T2",
+                  "T3"
+                ],
+                "properties": {
+                  "T1": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "T2": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "T3": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

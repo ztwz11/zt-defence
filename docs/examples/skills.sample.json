@@ -1,0 +1,67 @@
+{
+  "version": "0.1.0",
+  "skills": [
+    {
+      "id": "skill_knight_guard",
+      "name": "방패 수련",
+      "trigger": "Passive",
+      "effects": [
+        {
+          "type": "BuffStat",
+          "stat": "hp",
+          "value": 0.15,
+          "valueType": "percent"
+        }
+      ],
+      "notes": "탱커 기본 패시브: 최대 체력 +15%"
+    },
+    {
+      "id": "skill_archer_aim",
+      "name": "조준 사격",
+      "trigger": "OnAttack",
+      "chance": 0.25,
+      "effects": [
+        {
+          "type": "Damage",
+          "multiplier": 0.6,
+          "damageType": "physical"
+        }
+      ],
+      "notes": "공격 시 25% 확률로 추가 피해(기본 공격의 60%)"
+    },
+    {
+      "id": "skill_fireball",
+      "name": "파이어볼",
+      "trigger": "Active",
+      "cooldown": 6.0,
+      "target": "area",
+      "effects": [
+        {
+          "type": "Damage",
+          "multiplier": 2.2,
+          "damageType": "magic"
+        },
+        {
+          "type": "ApplyStatus",
+          "statusId": "burn",
+          "duration": 3.0
+        }
+      ],
+      "notes": "6초마다 광역 마법 피해 + 화상"
+    },
+    {
+      "id": "skill_priest_heal",
+      "name": "치유의 기도",
+      "trigger": "Active",
+      "cooldown": 7.0,
+      "target": "ally",
+      "effects": [
+        {
+          "type": "Heal",
+          "multiplier": 1.8
+        }
+      ],
+      "notes": "7초마다 아군 1명 회복"
+    }
+  ]
+}

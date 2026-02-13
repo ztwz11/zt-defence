@@ -1,0 +1,72 @@
+{
+  "version": "0.1.0",
+  "synergies": [
+    {
+      "id": "syn_knights",
+      "name": "기사단",
+      "tag": "faction:knights",
+      "thresholds": [
+        {
+          "count": 2,
+          "effects": [
+            {
+              "type": "BuffStat",
+              "stat": "hp",
+              "value": 0.1,
+              "valueType": "percent",
+              "notes": "전 유닛 HP +10%"
+            }
+          ]
+        },
+        {
+          "count": 4,
+          "effects": [
+            {
+              "type": "ShieldOnWaveStart",
+              "value": 0.08,
+              "notes": "웨이브 시작 시 보호막(HP의 8%)"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "syn_fire",
+      "name": "화염",
+      "tag": "element:fire",
+      "thresholds": [
+        {
+          "count": 2,
+          "effects": [
+            {
+              "type": "ApplyStatusOnHit",
+              "statusId": "burn",
+              "chance": 0.2,
+              "duration": 2.0,
+              "notes": "공격 시 20% 확률 화상"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "syn_healer",
+      "name": "성직자",
+      "tag": "class:healer",
+      "thresholds": [
+        {
+          "count": 2,
+          "effects": [
+            {
+              "type": "BuffStat",
+              "stat": "atkSpeed",
+              "value": 0.08,
+              "valueType": "percent",
+              "notes": "전 유닛 공속 +8%"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

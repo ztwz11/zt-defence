@@ -1,0 +1,134 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/schemas/units.schema.json",
+  "title": "Units",
+  "type": "object",
+  "required": [
+    "version",
+    "units"
+  ],
+  "properties": {
+    "version": {
+      "type": "string"
+    },
+    "units": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "rarity",
+          "tags",
+          "stats"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[a-z][a-z0-9_\\-\\.]*$",
+            "description": "lower_snake_case 권장. 예: knight_sword, fire_mage"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "rarity": {
+            "type": "string",
+            "enum": [
+              "T1",
+              "T2",
+              "T3"
+            ]
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "stats": {
+            "type": "object",
+            "required": [
+              "hp",
+              "atk",
+              "atkSpeed",
+              "range"
+            ],
+            "properties": {
+              "hp": {
+                "type": "number",
+                "minimum": 1
+              },
+              "atk": {
+                "type": "number",
+                "minimum": 0
+              },
+              "atkSpeed": {
+                "type": "number",
+                "exclusiveMinimum": 0
+              },
+              "range": {
+                "type": "number",
+                "minimum": 0
+              },
+              "critChance": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1,
+                "default": 0.05
+              },
+              "critMultiplier": {
+                "type": "number",
+                "minimum": 1,
+                "default": 1.5
+              }
+            },
+            "additionalProperties": false
+          },
+          "skillIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "^[a-z][a-z0-9_\\-\\.]*$",
+              "description": "lower_snake_case 권장. 예: knight_sword, fire_mage"
+            },
+            "default": []
+          },
+          "targetRule": {
+            "type": "string",
+            "enum": [
+              "frontMost",
+              "lowestHp",
+              "random"
+            ],
+            "default": "frontMost"
+          },
+          "animations": {
+            "type": "object",
+            "properties": {
+              "idle": {
+                "type": "string"
+              },
+              "attack": {
+                "type": "string"
+              },
+              "hit": {
+                "type": "string"
+              },
+              "die": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": true
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,65 @@
+{
+  "version": "0.1.0",
+  "enemies": [
+    {
+      "id": "goblin",
+      "name": "고블린",
+      "stats": {
+        "hp": 60,
+        "moveSpeed": 1.0,
+        "armor": 0,
+        "resist": 0
+      },
+      "leakDamage": 1,
+      "rewardGold": 0.4,
+      "tags": [
+        "type:grunt"
+      ]
+    },
+    {
+      "id": "goblin_elite",
+      "name": "고블린 정예",
+      "stats": {
+        "hp": 140,
+        "moveSpeed": 1.05,
+        "armor": 8,
+        "resist": 0
+      },
+      "leakDamage": 2,
+      "rewardGold": 0.8,
+      "tags": [
+        "type:elite"
+      ]
+    },
+    {
+      "id": "slime",
+      "name": "슬라임",
+      "stats": {
+        "hp": 80,
+        "moveSpeed": 0.9,
+        "armor": 0,
+        "resist": 5
+      },
+      "leakDamage": 1,
+      "rewardGold": 0.5,
+      "tags": [
+        "type:grunt"
+      ]
+    },
+    {
+      "id": "boar_boss",
+      "name": "철갑 멧돼지",
+      "stats": {
+        "hp": 1200,
+        "moveSpeed": 1.1,
+        "armor": 20,
+        "resist": 10
+      },
+      "leakDamage": 3,
+      "rewardGold": 5.0,
+      "tags": [
+        "type:boss"
+      ]
+    }
+  ]
+}

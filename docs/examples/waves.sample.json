@@ -1,0 +1,92 @@
+{
+  "version": "0.1.0",
+  "waves": [
+    {
+      "waveNumber": 1,
+      "prepareTime": 12,
+      "spawns": [
+        {
+          "time": 0,
+          "enemyId": "goblin",
+          "count": 6,
+          "interval": 0.7
+        }
+      ],
+      "reward": {
+        "type": "Gold",
+        "amount": 5
+      }
+    },
+    {
+      "waveNumber": 2,
+      "prepareTime": 12,
+      "spawns": [
+        {
+          "time": 0,
+          "enemyId": "goblin",
+          "count": 8,
+          "interval": 0.65
+        }
+      ],
+      "reward": {
+        "type": "Gold",
+        "amount": 5
+      }
+    },
+    {
+      "waveNumber": 3,
+      "prepareTime": 12,
+      "spawns": [
+        {
+          "time": 0,
+          "enemyId": "slime",
+          "count": 8,
+          "interval": 0.7
+        }
+      ],
+      "reward": {
+        "type": "RelicChoice",
+        "choices": 3
+      }
+    },
+    {
+      "waveNumber": 4,
+      "prepareTime": 12,
+      "spawns": [
+        {
+          "time": 0,
+          "enemyId": "goblin_elite",
+          "count": 2,
+          "interval": 2.0
+        },
+        {
+          "time": 1.5,
+          "enemyId": "goblin",
+          "count": 6,
+          "interval": 0.6
+        }
+      ],
+      "reward": {
+        "type": "Gold",
+        "amount": 7
+      }
+    },
+    {
+      "waveNumber": 5,
+      "isBoss": true,
+      "prepareTime": 15,
+      "spawns": [
+        {
+          "time": 0,
+          "enemyId": "boar_boss",
+          "count": 1,
+          "interval": 0
+        }
+      ],
+      "reward": {
+        "type": "BossChest",
+        "amount": 1
+      }
+    }
+  ]
+}

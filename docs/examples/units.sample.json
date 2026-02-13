@@ -1,0 +1,117 @@
+{
+  "version": "0.1.0",
+  "units": [
+    {
+      "id": "knight_sword",
+      "name": "검기사",
+      "rarity": "T1",
+      "tags": [
+        "faction:knights",
+        "weapon:sword",
+        "role:tank"
+      ],
+      "stats": {
+        "hp": 160,
+        "atk": 14,
+        "atkSpeed": 0.9,
+        "range": 1.2,
+        "critChance": 0.05,
+        "critMultiplier": 1.5
+      },
+      "skillIds": [
+        "skill_knight_guard"
+      ],
+      "targetRule": "frontMost",
+      "animations": {
+        "idle": "knight_sword.idle",
+        "attack": "knight_sword.attack",
+        "hit": "knight_sword.hit",
+        "die": "knight_sword.die"
+      }
+    },
+    {
+      "id": "archer",
+      "name": "궁수",
+      "rarity": "T1",
+      "tags": [
+        "faction:knights",
+        "weapon:bow",
+        "role:dps"
+      ],
+      "stats": {
+        "hp": 90,
+        "atk": 18,
+        "atkSpeed": 1.1,
+        "range": 4.5,
+        "critChance": 0.1,
+        "critMultiplier": 1.7
+      },
+      "skillIds": [
+        "skill_archer_aim"
+      ],
+      "targetRule": "frontMost",
+      "animations": {
+        "idle": "archer.idle",
+        "attack": "archer.attack",
+        "hit": "archer.hit",
+        "die": "archer.die"
+      }
+    },
+    {
+      "id": "fire_mage",
+      "name": "화염 마도사",
+      "rarity": "T2",
+      "tags": [
+        "faction:academy",
+        "element:fire",
+        "role:control"
+      ],
+      "stats": {
+        "hp": 80,
+        "atk": 10,
+        "atkSpeed": 0.8,
+        "range": 4.0,
+        "critChance": 0.05,
+        "critMultiplier": 1.5
+      },
+      "skillIds": [
+        "skill_fireball"
+      ],
+      "targetRule": "frontMost",
+      "animations": {
+        "idle": "fire_mage.idle",
+        "attack": "fire_mage.attack",
+        "hit": "fire_mage.hit",
+        "die": "fire_mage.die"
+      }
+    },
+    {
+      "id": "priest",
+      "name": "성직자",
+      "rarity": "T2",
+      "tags": [
+        "class:healer",
+        "faction:church",
+        "role:support"
+      ],
+      "stats": {
+        "hp": 100,
+        "atk": 6,
+        "atkSpeed": 0.7,
+        "range": 4.2,
+        "critChance": 0.02,
+        "critMultiplier": 1.5
+      },
+      "skillIds": [
+        "skill_priest_heal"
+      ],
+      "targetRule": "lowestHp",
+      "animations": {
+        "idle": "priest.idle",
+        "attack": "priest.attack",
+        "hit": "priest.hit",
+        "die": "priest.die"
+      }
+    }
+  ]
+}
