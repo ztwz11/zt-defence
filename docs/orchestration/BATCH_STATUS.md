@@ -18,8 +18,8 @@
 ## Integration Checks
 
 - Combined tests:
-  - `node --test tests/run-save/**/*.test.js tests/combat/**/*.test.js tests/economy/**/*.test.js`
-  - Result: 42 passed, 0 failed
+  - `node --test tests/run-save/**/*.test.js tests/combat/**/*.test.js tests/economy/**/*.test.js tests/integration/**/*.test.js`
+  - Result: 45 passed, 0 failed
 - Schema/sample validation:
   - `python tools/validate-schemas.py`
   - Result: 10/10 pairs passed
@@ -29,25 +29,27 @@
 1. Gate A (Contracts frozen): `GREEN`
 2. Gate B (Foundation modules merged): `GREEN`
 3. Gate C (Combat/Run core merged): `GREEN`
-4. Gate D (UI/HUD integrated): `PENDING`
+4. Gate D (UI/HUD integrated): `GREEN`
 5. Gate E (Validation + save/replay checks passing): `PARTIAL`
-   - Current module-level checks pass.
-   - End-to-end UI integration replay flow pending.
+   - Current module-level + integration checks pass.
+   - CI/workflow hardening and release-grade replay gates are pending.
+
+## Batch 3 Completion (E)
+
+| Module | Owner | Status | Owned Paths | Tests |
+| --- | --- | --- | --- | --- |
+| E (UI State + Integration) | worker-agent | Completed | `src/ui/**`, `src/render/**`, `src/main/**`, `tests/integration/**` | 3 passed |
 
 ## Remaining Blockers
 
-1. Module E not started (`src/ui/**`, `src/render/**`, `src/main/**`).
-2. Integration contract between UI state and B/C/D modules not implemented yet.
-3. End-to-end run replay scenario not yet covered.
+1. Module F not started (`tools/**`, `.github/workflows/**` hardening path).
+2. CI/test workflow gating is not defined yet.
+3. Release-grade replay/save-restore e2e scenario is not yet automated.
 
 ## Next Parallel Batch Plan
 
-1. Batch 3: Module E kickoff (UI state + integration)
-   - Owner path: `src/ui/**`, `src/render/**`, `src/main/**`, `tests/integration/**`
-2. Batch 4: Module F checks/CI hardening
+1. Batch 4: Module F checks/CI hardening
    - Owner path: `tools/**`, `.github/workflows/**`
-3. Promote Gate D -> Gate E only after:
-   - run phase transitions integrated to UI
-   - HUD bindings live
-   - replay/load smoke tests passing
-
+2. Promote Gate E to full GREEN only after:
+   - schema/test validation wired into CI
+   - replay/load smoke tests automated in release checks
