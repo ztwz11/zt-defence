@@ -46,15 +46,20 @@
 | --- | --- | --- | --- | --- |
 | F (Tooling + CI Checks) | worker-agent | Completed | `tools/**`, `.github/workflows/**` | readiness check pass |
 
+## Batch 5 Completion (M0 vertical slices)
+
+| Slice | Owner | Status | Owned Paths | Tests |
+| --- | --- | --- | --- | --- |
+| VS1 summon/board/merge/synergy | worker-agent | Completed | `src/game/summon/**`, `src/game/board/**`, `src/game/synergy/**`, `tests/board/**` | 15 passed |
+| VS2 session/result/history projection | worker-agent | Completed | `src/main/m0/**`, `src/ui/screens/**`, `tests/m0/**` | 4 passed |
+| VS3 tutorial flow | worker-agent | Completed | `src/game/tutorial/**`, `src/ui/tutorial/**`, `tests/tutorial/**` | 4 passed |
+
 ## Remaining Blockers
 
-1. Ready for feature development batch (M0 gameplay vertical slice).
-2. 추가 e2e 범위 확장(멀티웨이브/중단후재개 장시간)만 남아있음.
+1. 실제 Phaser/React 런타임 연결(현재는 headless/service 중심 구현).
+2. 장시간 run-save/reload e2e와 다중 웨이브 튜닝 자동화 확장.
 
 ## Next Parallel Batch Plan
 
-1. Batch 5: M0 gameplay vertical slices (병렬)
-   - VS1: summon/board interaction
-   - VS2: wave progression and reward loop
-   - VS3: result/history screen integration
-2. Batch 6: polish and performance gates
+1. Batch 6: runtime wiring (Phaser scene + React HUD bridge)
+2. Batch 7: polish and performance gates
