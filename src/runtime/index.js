@@ -7,4 +7,5 @@ module.exports = {
   ...require('./phaser-facade'),
   ...require('./react-hud-facade'),
   ...require('./connectors'),
+  ...require('./framework-bindings'),
 };

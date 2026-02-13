@@ -76,12 +76,19 @@
 | O balance simulator toolkit | worker-agent | Completed | `tools/balance/**`, `tests/balance/**` | 7 passed |
 | P performance probe toolkit | worker-agent | Completed | `tools/perf/**`, `tests/perf/**` | 9 passed |
 
+## Batch 9 Completion (framework object binding)
+
+| Module | Owner | Status | Owned Paths | Tests |
+| --- | --- | --- | --- | --- |
+| Q Phaser scene binding | worker-agent | Completed | `src/runtime/framework-bindings/phaser-scene-binding.js`, `tests/runtime-bindings/phaser-scene-binding.test.js` | 6 passed |
+| R React HUD binding | worker-agent | Completed | `src/runtime/framework-bindings/react-hud-binding.js`, `tests/runtime-bindings/react-hud-binding.test.js` | 4 passed |
+| Batch 9 integration | codex-main | Completed | `src/main/runtime/app/**`, `src/runtime/index.js`, `src/runtime/framework-bindings/index.js`, `tests/runtime-app/**` | runtime/runtime-app/runtime-bindings pass |
+
 ## Remaining Blockers
 
-1. Phaser/React 실제 프레임워크 객체 연결(현재는 framework-agnostic callback 파사드).
-2. 캔버스 렌더/입력 루프의 실기기 성능(모바일 30fps) 측정 기준 수립.
+1. 캔버스 렌더/입력 루프의 실기기 성능(모바일 30fps) 측정 기준 수립.
+2. 밸런스 자동 튜닝 루프(시드 배치 + 파라미터 서치)를 프로브/시뮬레이터에 결합.
 
 ## Next Parallel Batch Plan
 
-1. Batch 9: Phaser Scene + React HUD 실제 객체 바인딩
-2. Batch 10: 밸런스 자동 튜닝 루프(시드 배치 + 파라미터 서치)
+1. Batch 10: 밸런스 자동 튜닝 루프(시드 배치 + 파라미터 서치)

@@ -7,6 +7,8 @@ const {
   RUNTIME_EVENT_NAMES,
   createPhaserFacade,
   createReactHudFacade,
+  createPhaserSceneBinding,
+  createReactHudBinding,
 } = require('../../../runtime');
 
 function isPlainObject(value) {
@@ -309,6 +311,104 @@ function attachCallbackSubscribers(bus, callbacks) {
   };
 }
 
+function createFrameworkBindingRegistry(bus, frameworkBindings, factories) {
+  if (!bus || typeof bus.on !== 'function') {
+    return {
+      getSnapshots() {
+        return {};
+      },
+      dispose() {},
+    };
+  }
+
+  const config = isPlainObject(frameworkBindings) ? frameworkBindings : {};
+  const sourceFactories = isPlainObject(factories) ? factories : {};
+  const phaserBindingFactory =
+    typeof sourceFactories.createPhaserSceneBinding === 'function'
+      ? sourceFactories.createPhaserSceneBinding
+      : createPhaserSceneBinding;
+  const reactBindingFactory =
+    typeof sourceFactories.createReactHudBinding === 'function'
+      ? sourceFactories.createReactHudBinding
+      : createReactHudBinding;
+  const bindings = {};
+
+  const phaserConfig = isPlainObject(config.phaser) ? config.phaser : null;
+  if (
+    phaserConfig &&
+    isPlainObject(phaserConfig.scene) &&
+    typeof phaserBindingFactory === 'function'
+  ) {
+    const phaserBinding = phaserBindingFactory({
+      ...cloneObject(phaserConfig),
+      bus,
+    });
+    if (phaserBinding && typeof phaserBinding.connect === 'function') {
+      phaserBinding.connect();
+      bindings.phaser = phaserBinding;
+    }
+  }
+
+  const reactConfig = isPlainObject(config.react) ? config.react : null;
+  if (
+    reactConfig &&
+    isPlainObject(reactConfig.hud) &&
+    typeof reactBindingFactory === 'function'
+  ) {
+    const reactBinding = reactBindingFactory({
+      ...cloneObject(reactConfig),
+      bus,
+    });
+    if (reactBinding && typeof reactBinding.connect === 'function') {
+      reactBinding.connect();
+      bindings.react = reactBinding;
+    }
+  }
+
+  let disposed = false;
+
+  function getSnapshots() {
+    const snapshots = {};
+    const names = Object.keys(bindings).sort();
+
+    for (const bindingName of names) {
+      const binding = bindings[bindingName];
+      if (binding && typeof binding.getSnapshot === 'function') {
+        snapshots[bindingName] = binding.getSnapshot();
+      }
+    }
+
+    return snapshots;
+  }
+
+  function dispose() {
+    if (disposed) {
+      return;
+    }
+
+    disposed = true;
+    const names = Object.keys(bindings).sort();
+
+    for (const bindingName of names) {
+      const binding = bindings[bindingName];
+      if (!binding) {
+        continue;
+      }
+
+      if (typeof binding.disconnect === 'function') {
+        binding.disconnect();
+      } else if (typeof binding.dispose === 'function') {
+        binding.dispose();
+      }
+    }
+  }
+
+  return {
+    getSnapshots,
+    dispose,
+  };
+}
+
 function createM0RuntimeApp(options) {
   const config = isPlainObject(options) ? options : {};
   const runtimeBridgeFactory =
@@ -328,6 +428,14 @@ function createM0RuntimeApp(options) {
       : createRunOrchestrationService;
   const orchestrationService = orchestrationFactory(cloneObject(config.orchestrationOptions));
   const disposeSubscribers = attachCallbackSubscribers(runtimeBridge.bus, config.callbacks);
+  const frameworkBindingRegistry = createFrameworkBindingRegistry(
+    runtimeBridge.bus,
+    config.frameworkBindings,
+    {
+      createPhaserSceneBinding: config.createPhaserSceneBinding,
+      createReactHudBinding: config.createReactHudBinding,
+    }
+  );
   let disposed = false;
 
   function startRun(chapterContext) {
@@ -456,6 +564,7 @@ function createM0RuntimeApp(options) {
     }
 
     disposed = true;
+    frameworkBindingRegistry.dispose();
     disposeSubscribers();
   }
 
@@ -464,6 +573,9 @@ function createM0RuntimeApp(options) {
     startRun,
     runWave,
     runSession,
+    getFrameworkBindingSnapshots() {
+      return frameworkBindingRegistry.getSnapshots();
+    },
     dispose,
   };
 }

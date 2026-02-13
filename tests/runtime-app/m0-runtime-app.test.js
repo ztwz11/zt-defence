@@ -60,6 +60,45 @@ function createChapterContext(overrides) {
   };
 }
 
+function createFrameworkBridges() {
+  return {
+    phaserScene: {
+      runPhaseCalls: 0,
+      simulationCalls: 0,
+      resultCalls: 0,
+      onRunPhase(payload) {
+        this.runPhaseCalls += 1;
+        this.lastRunPhase = payload;
+      },
+      onSimulationEvent(payload) {
+        this.simulationCalls += 1;
+        this.lastSimulation = payload;
+      },
+      onResult(payload) {
+        this.resultCalls += 1;
+        this.lastResult = payload;
+      },
+    },
+    reactHud: {
+      runPhaseCalls: 0,
+      hudUpdateCalls: 0,
+      resultCalls: 0,
+      onRuntimeRunPhase(payload) {
+        this.runPhaseCalls += 1;
+        this.lastRunPhase = payload;
+      },
+      onRuntimeHudUpdate(payload) {
+        this.hudUpdateCalls += 1;
+        this.lastHudUpdate = payload;
+      },
+      onRuntimeResult(payload) {
+        this.resultCalls += 1;
+        this.lastResult = payload;
+      },
+    },
+  };
+}
+
 test('runWave returns payload and emitted event summary', () => {
   let phaserRunPhaseCalls = 0;
   let reactHudCalls = 0;
@@ -94,6 +133,43 @@ test('runWave returns payload and emitted event summary', () => {
   assert.ok(resultCalls > 0);
 
   app.dispose();
+});
+
+test('framework bindings connect runtime bridge events to phaser/react objects', () => {
+  const bridges = createFrameworkBridges();
+  const app = createM0RuntimeApp({
+    frameworkBindings: {
+      phaser: {
+        scene: bridges.phaserScene,
+      },
+      react: {
+        hud: bridges.reactHud,
+      },
+    },
+  });
+
+  const result = app.runWave(createChapterContext());
+  assert.equal(result.ok, true);
+
+  assert.ok(bridges.phaserScene.runPhaseCalls > 0);
+  assert.ok(bridges.phaserScene.simulationCalls > 0);
+  assert.equal(bridges.phaserScene.resultCalls, 1);
+
+  assert.ok(bridges.reactHud.runPhaseCalls > 0);
+  assert.ok(bridges.reactHud.hudUpdateCalls > 0);
+  assert.equal(bridges.reactHud.resultCalls, 1);
+
+  const snapshotsBeforeDispose = app.getFrameworkBindingSnapshots();
+  assert.equal(snapshotsBeforeDispose.phaser.connected, true);
+  assert.equal(snapshotsBeforeDispose.react.connected, true);
+  assert.equal(snapshotsBeforeDispose.phaser.resultEventCount, 1);
+  assert.equal(snapshotsBeforeDispose.react.resultEventCount, 1);
+
+  app.dispose();
+
+  const snapshotsAfterDispose = app.getFrameworkBindingSnapshots();
+  assert.equal(snapshotsAfterDispose.phaser.connected, false);
+  assert.equal(snapshotsAfterDispose.react.connected, false);
 });
 
 test('runSession is deterministic for the same seed and context', () => {
