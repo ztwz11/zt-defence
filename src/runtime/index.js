@@ -6,4 +6,5 @@ module.exports = {
   ...require('./runtime-coordinator'),
   ...require('./phaser-facade'),
   ...require('./react-hud-facade'),
+  ...require('./connectors'),
 };

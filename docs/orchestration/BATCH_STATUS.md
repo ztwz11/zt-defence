@@ -62,12 +62,19 @@
 | K long-run save/reload smoke | worker-agent | Completed | `tools/e2e/**`, `tests/e2e/**` | 3 passed |
 | L run metrics collector | worker-agent | Completed | `src/game/metrics/**`, `tests/metrics/**` | 3 passed |
 
+## Batch 7 Completion (scene/hud runtime app wiring)
+
+| Module | Owner | Status | Owned Paths | Tests |
+| --- | --- | --- | --- | --- |
+| M scene/hud connectors | worker-agent | Completed | `src/runtime/connectors/**`, `tests/runtime-connectors/**` | 6 passed |
+| N M0 runtime app bootstrap | worker-agent | Completed | `src/main/runtime/app/**`, `tests/runtime-app/**` | 3 passed |
+
 ## Remaining Blockers
 
-1. 실제 Phaser/React 컴포넌트로 연결하는 UI 런타임 구현.
+1. Phaser/React 실제 프레임워크 객체 연결(현재는 framework-agnostic callback 파사드).
 2. 성능 목표(모바일 30fps) 계측 자동화.
 
 ## Next Parallel Batch Plan
 
-1. Batch 7: Phaser scene + React HUD 실제 연결
-2. Batch 8: 성능/밸런스 튜닝 자동화
+1. Batch 8: Phaser/React 실제 런타임 객체 바인딩 + 화면 루프
+2. Batch 9: 성능/밸런스 튜닝 자동화
