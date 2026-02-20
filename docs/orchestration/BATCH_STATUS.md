@@ -1,4 +1,4 @@
-# Parallel Orchestration Status
+﻿# Parallel Orchestration Status
 
 ## Summary
 
@@ -92,12 +92,36 @@
 | T candidate search + CLI | worker-agent | Completed | `tools/balance/auto-tune.js`, `tools/balance/run-auto-tune.js`, `tests/balance/auto-tune.test.js` | 3 passed |
 | Batch 10 integration | codex-main | Completed | `README.md`, `docs/orchestration/BATCH_STATUS.md` | `node --test tests/balance/*.test.js` pass |
 
+## Batch 11 Completion (performance gate hardening)
+
+| Module | Owner | Status | Owned Paths | Checks |
+| --- | --- | --- | --- | --- |
+| U perf threshold schema/versioning | worker-agent | Completed | `tools/perf/default-thresholds.json`, `tools/perf/threshold-checker.js`, `tests/perf/threshold-checker.test.js` | perf tests pass |
+| V perf run+check wrapper | worker-agent | Completed | `tools/perf/run-and-check.js`, `tests/perf/run-and-check.test.js` | wrapper tests pass |
+| Batch 11 integration | codex-main | Completed | `tools/check-release-readiness.py`, `.github/workflows/release-readiness.yml` | release readiness gate integrated |
+
+## Batch 12 Completion (auto-tuning gate integration)
+
+| Module | Owner | Status | Owned Paths | Checks |
+| --- | --- | --- | --- | --- |
+| W tuning gate evaluator | worker-agent | Completed | `tools/balance/tuning-gate.js`, `tests/balance/tuning-gate.test.js` | tuning gate tests pass |
+| X tuning gate CLI/config | worker-agent | Completed | `tools/balance/run-tuning-gate.js`, `tools/balance/tuning-gate-config.json` | CLI flow pass |
+| Y auto-tune report schema/export | worker-agent | Completed | `tools/balance/auto-tune.js`, `tools/balance/run-auto-tune.js`, `tests/balance/auto-tune.test.js` | report + objective wiring pass |
+| Batch 12 integration | codex-main | Completed | `tools/check-release-readiness.py`, `.github/workflows/release-readiness.yml` | release readiness gate integrated |
+
+## Current Gate Snapshot
+
+1. `node tools/perf/run-and-check.js --profile=ci-mobile-baseline --iterations=200` -> `PASS`
+2. `node tools/balance/run-tuning-gate.js` -> `PASS` (`score=0.274286`)
+3. `python tools/check-release-readiness.py` -> `PASS`
+
 ## Remaining Blockers
 
-1. 캔버스 렌더/입력 루프의 실기기 성능(모바일 30fps) 측정 기준 수립.
-2. 자동 튜닝 결과를 릴리즈 게이트/CI 임계치와 연결하는 운영 루프 구성.
+1. No blocking issue for Batch 11/12 release-gate scope.
+2. Next risk is objective realism for future chapters (current chapter_1 tuning still has a steep clear/fail boundary).
 
 ## Next Parallel Batch Plan
 
-1. Batch 11: 실기기 성능 측정 기준 확정 + 측정 자동화 리포트
-2. Batch 12: 자동 튜닝 결과 기반 밸런스 게이트(합격/경고/차단) 추가
+1. Batch 13: expand objective/parameter contracts for multi-chapter tuning (chapter-specific targets + thresholds).
+2. Batch 14: strengthen observability outputs (persist top-N candidate reports and CI artifacts for trend tracking).
+
