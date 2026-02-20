@@ -6,6 +6,8 @@ const { sampleRunSeeds } = require('./seed-sampler');
 const { normalizeTuningObjective, scoreBalanceSummary: defaultScoreBalanceSummary } = require('./tuning-objective');
 const { createSeededRng } = require('../../src/game/sim/seededRng');
 
+const AUTO_TUNE_REPORT_VERSION = 1;
+
 const DEFAULT_PARAMETER_SPACE = Object.freeze({
   waveStartGold: Object.freeze({
     min: 1,
@@ -502,6 +504,7 @@ function runAutoTune(options) {
   const seeds = buildSeedBatch(normalized);
   const sampledCandidates = generateSearchCandidatesFromNormalized(normalized);
   const evaluations = [];
+  const objective = cloneJson(normalized.objective);
 
   evaluations.push(evaluateCandidate(normalized, seeds, {}, 'baseline', true, 0));
 
@@ -528,6 +531,7 @@ function runAutoTune(options) {
     }));
 
   return {
+    reportVersion: AUTO_TUNE_REPORT_VERSION,
     options: {
       chapterId: normalized.chapterId,
       waveMax: normalized.waveMax,
@@ -537,8 +541,9 @@ function runAutoTune(options) {
       searchSeed: normalized.searchSeed,
       candidateCount: normalized.candidateCount,
       parameterSpace: cloneJson(normalized.parameterSpace),
-      objective: cloneJson(normalized.objective),
+      objective: cloneJson(objective),
     },
+    objective,
     seeds,
     rankedCandidates,
     bestCandidate: rankedCandidates.length > 0 ? rankedCandidates[0] : null,
@@ -546,6 +551,7 @@ function runAutoTune(options) {
 }
 
 module.exports = {
+  AUTO_TUNE_REPORT_VERSION,
   normalizeAutoTuneOptions,
   generateSearchCandidates,
   applyCandidateToChapterContext,

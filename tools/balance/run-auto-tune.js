@@ -182,10 +182,19 @@ function main() {
   process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
 }
 
-try {
-  main();
-} catch (error) {
-  process.stderr.write('[auto-tune] Failed to run auto tuning\n');
-  process.stderr.write(`${error && error.stack ? error.stack : String(error)}\n`);
-  process.exit(1);
+if (require.main === module) {
+  try {
+    main();
+  } catch (error) {
+    process.stderr.write('[auto-tune] Failed to run auto tuning\n');
+    process.stderr.write(`${error && error.stack ? error.stack : String(error)}\n`);
+    process.exit(1);
+  }
 }
+
+module.exports = {
+  parseCliArgs,
+  getArgValue,
+  buildAutoTuneOptions,
+  main,
+};

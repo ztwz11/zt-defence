@@ -6,6 +6,7 @@ const assert = require('node:assert/strict');
 const {
   evaluateThresholds,
   formatFailures,
+  normalizeThresholdEnvelope,
   normalizeThresholds,
 } = require('../../tools/perf/threshold-checker');
 
@@ -67,7 +68,8 @@ test('evaluateThresholds fails when a metric exceeds threshold and formats clear
   assert.equal(result.failures[0].type, 'threshold_exceeded');
 
   const message = formatFailures(result);
-  assert.match(message, /tickSimulation\.p95Ms/);
+  assert.match(message, /operation=tickSimulation/);
+  assert.match(message, /metric=p95Ms/);
   assert.match(message, /actual=2.5ms threshold=2ms/);
 });
 
@@ -88,7 +90,7 @@ test('evaluateThresholds fails when configured operation is missing', () => {
   assert.equal(result.ok, false);
   assert.equal(result.failures.length, 1);
   assert.equal(result.failures[0].type, 'missing_operation');
-  assert.match(formatFailures(result), /Missing operation in report: runWaveSlice/);
+  assert.match(formatFailures(result), /Missing operation in report: operation=runWaveSlice/);
 });
 
 test('evaluateThresholds can ignore missing operations', () => {
@@ -131,4 +133,51 @@ test('normalizeThresholds keeps only numeric metrics', () => {
       maxMs: 20,
     },
   });
+});
+
+test('normalizeThresholdEnvelope supports versioned threshold schema', () => {
+  const envelope = normalizeThresholdEnvelope({
+    version: '1.2.3',
+    profile: 'ci-mobile-baseline',
+    operations: {
+      tickSimulation: {
+        avgMs: 10,
+        p95Ms: 'bad',
+        maxMs: 20,
+      },
+      runWaveSlice: 'invalid',
+    },
+  });
+
+  assert.deepEqual(envelope, {
+    version: '1.2.3',
+    profile: 'ci-mobile-baseline',
+    operations: {
+      tickSimulation: {
+        avgMs: 10,
+        maxMs: 20,
+      },
+    },
+  });
+});
+
+test('evaluateThresholds reads versioned thresholds and includes profile in failures', () => {
+  const result = evaluateThresholds(createReport(), {
+    version: '2.0.0',
+    profile: 'ci-mobile-baseline',
+    operations: {
+      tickSimulation: { p95Ms: 2 },
+    },
+  });
+
+  assert.equal(result.ok, false);
+  assert.equal(result.profile, 'ci-mobile-baseline');
+  assert.equal(result.thresholdVersion, '2.0.0');
+
+  const message = formatFailures(result);
+  assert.match(message, /operation=tickSimulation/);
+  assert.match(message, /metric=p95Ms/);
+  assert.match(message, /actual=2.5ms/);
+  assert.match(message, /threshold=2ms/);
+  assert.match(message, /profile=ci-mobile-baseline/);
 });

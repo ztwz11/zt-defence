@@ -7,10 +7,15 @@ const path = require('node:path');
 const { runTickSimulation } = require('../../src/game/sim/tickSimulation');
 const { createRunOrchestrationService, createM0SessionCoordinator } = require('../../src/main');
 const { calculateStats } = require('./stats');
+const { DEFAULT_THRESHOLDS, normalizeThresholdEnvelope } = require('./threshold-checker');
 
 const DEFAULT_ITERATIONS = 200;
+const DEFAULT_PROFILE = 'ci-mobile-baseline';
 
 function toPositiveInteger(value, fallback) {
+  if (value === null || value === undefined || value === '') {
+    return fallback;
+  }
   const numeric = Number(value);
   if (!Number.isFinite(numeric)) {
     return fallback;
@@ -20,6 +25,7 @@ function toPositiveInteger(value, fallback) {
 
 function parseArgs(argv) {
   let iterations = DEFAULT_ITERATIONS;
+  let profile = DEFAULT_PROFILE;
   let outputPath = null;
 
   for (let index = 0; index < argv.length; index += 1) {
@@ -29,6 +35,7 @@ function parseArgs(argv) {
       return {
         help: true,
         iterations,
+        profile,
         outputPath,
       };
     }
@@ -56,6 +63,17 @@ function parseArgs(argv) {
       continue;
     }
 
+    if (arg.startsWith('--profile=')) {
+      profile = arg.slice('--profile='.length).trim();
+      continue;
+    }
+
+    if (arg === '--profile') {
+      profile = (argv[index + 1] || '').trim();
+      index += 1;
+      continue;
+    }
+
     throw new Error(`Unknown argument: ${arg}`);
   }
 
@@ -67,9 +85,14 @@ function parseArgs(argv) {
     throw new Error('Invalid --output value. Expected a non-empty file path.');
   }
 
+  if (profile.length === 0) {
+    throw new Error('Invalid --profile value. Expected a non-empty profile name.');
+  }
+
   return {
     help: false,
     iterations,
+    profile,
     outputPath,
   };
 }
@@ -80,6 +103,7 @@ function printHelp() {
     '',
     'Options:',
     `  --iterations=<n>   Number of iterations per operation (default: ${DEFAULT_ITERATIONS})`,
+    `  --profile=<name>   Threshold profile tag included in output (default: ${DEFAULT_PROFILE})`,
     '  --output=<path>    Optional JSON output file path',
     '  --help             Show this help message',
   ];
@@ -291,8 +315,34 @@ function measureOperation(operationDefinition, iterations) {
   };
 }
 
+function resolveThresholdVersion(thresholdConfig) {
+  const envelope = normalizeThresholdEnvelope(thresholdConfig);
+  if (typeof envelope.version === 'string' && envelope.version.length > 0) {
+    return envelope.version;
+  }
+  return null;
+}
+
+function loadDefaultThresholdConfig() {
+  const defaultThresholdPath = path.join(__dirname, 'default-thresholds.json');
+  try {
+    const raw = fs.readFileSync(defaultThresholdPath, 'utf8');
+    return JSON.parse(raw);
+  } catch (error) {
+    return DEFAULT_THRESHOLDS;
+  }
+}
+
 function runPerfProbe(options) {
   const iterations = toPositiveInteger(options?.iterations, DEFAULT_ITERATIONS);
+  const profile =
+    typeof options?.profile === 'string' && options.profile.trim()
+      ? options.profile.trim()
+      : DEFAULT_PROFILE;
+  const thresholdVersion =
+    typeof options?.thresholdVersion === 'string' && options.thresholdVersion.trim()
+      ? options.thresholdVersion.trim()
+      : resolveThresholdVersion(loadDefaultThresholdConfig());
   const operations = createOperations();
   const operationReports = operations.map((operationDefinition) =>
     measureOperation(operationDefinition, iterations)
@@ -302,6 +352,8 @@ function runPerfProbe(options) {
     reportVersion: 1,
     generatedAt: new Date().toISOString(),
     iterations,
+    profile,
+    thresholdVersion,
     operations: operationReports,
   };
 }
@@ -332,6 +384,7 @@ function main() {
   try {
     const report = runPerfProbe({
       iterations: args.iterations,
+      profile: args.profile,
     });
 
     if (args.outputPath) {
@@ -352,7 +405,10 @@ if (require.main === module) {
 }
 
 module.exports = {
+  DEFAULT_PROFILE,
   createOperations,
+  loadDefaultThresholdConfig,
   parseArgs,
+  resolveThresholdVersion,
   runPerfProbe,
 };

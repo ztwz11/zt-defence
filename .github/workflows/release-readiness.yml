@@ -28,5 +28,11 @@ jobs:
       - name: Run Node test suite
         run: node --test tests/**/*.test.js
 
+      - name: Run performance gate checks
+        run: node tools/perf/run-and-check.js --profile=ci-mobile-baseline --iterations=200
+
+      - name: Run balance tuning gate checks
+        run: node tools/balance/run-tuning-gate.js --chapter=chapter_1 --wave-max=20 --seeds=200 --candidates=24 --search-seed=2026 --target-clear=0.55 --target-wave=14 --max-fail=0.35
+
       - name: Run full release-readiness checks
         run: python tools/check-release-readiness.py

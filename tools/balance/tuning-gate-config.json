@@ -1,0 +1,12 @@
+{
+  "thresholds": {
+    "passMaxScore": 0.75,
+    "warnMaxScore": 1.25
+  },
+  "recommendations": {
+    "pass": "No tuning changes required.",
+    "warn": "Review the candidate spread and consider re-running auto tune.",
+    "fail": "Block release and re-run auto tune after tuning adjustments.",
+    "missingBestCandidate": "Provide an auto-tune report that includes bestCandidate.score."
+  }
+}

@@ -5,6 +5,7 @@ const assert = require('node:assert/strict');
 
 const { buildBalanceChapterContext } = require('../../tools/balance/chapter-presets');
 const {
+  AUTO_TUNE_REPORT_VERSION,
   applyCandidateToChapterContext,
   generateSearchCandidates,
   runAutoTune,
@@ -107,6 +108,8 @@ test('runAutoTune ranks candidates and selects best candidate with injected stub
     },
   });
 
+  assert.equal(result.reportVersion, AUTO_TUNE_REPORT_VERSION);
+  assert.deepEqual(result.objective, result.options.objective);
   assert.deepEqual(result.seeds, fixedSeeds);
   assert.equal(result.rankedCandidates.length, 4);
   assert.equal(result.bestCandidate.isBaseline, false);

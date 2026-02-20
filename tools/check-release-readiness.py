@@ -22,6 +22,30 @@ CHECKS = [
     ("node test suite", ["node", "--test", "tests/**/*.test.js"]),
     ("deterministic replay/save smoke checks", ["node", "tools/smoke-replay-save-check.js"]),
     ("long-run save/reload smoke checks", ["node", "tools/e2e/long-run-save-reload-smoke.js"]),
+    (
+        "performance gate checks",
+        [
+            "node",
+            "tools/perf/run-and-check.js",
+            "--profile=ci-mobile-baseline",
+            "--iterations=200",
+        ],
+    ),
+    (
+        "balance tuning gate checks",
+        [
+            "node",
+            "tools/balance/run-tuning-gate.js",
+            "--chapter=chapter_1",
+            "--wave-max=20",
+            "--seeds=200",
+            "--candidates=24",
+            "--search-seed=2026",
+            "--target-clear=0.55",
+            "--target-wave=14",
+            "--max-fail=0.35",
+        ],
+    ),
 ]
 
 

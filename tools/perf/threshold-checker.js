@@ -58,6 +58,26 @@ function normalizeThresholds(thresholdConfig) {
   return normalized;
 }
 
+function normalizeThresholdEnvelope(thresholdConfig) {
+  const source = isPlainObject(thresholdConfig) ? thresholdConfig : {};
+  const hasVersionedOperations = isPlainObject(source.operations);
+  const operationsSource = hasVersionedOperations ? source.operations : source;
+  const normalizedVersion =
+    typeof source.version === 'string' && source.version.trim()
+      ? source.version.trim()
+      : null;
+  const normalizedProfile =
+    typeof source.profile === 'string' && source.profile.trim()
+      ? source.profile.trim()
+      : null;
+
+  return {
+    version: hasVersionedOperations ? normalizedVersion : null,
+    profile: hasVersionedOperations ? normalizedProfile : null,
+    operations: normalizeThresholds(operationsSource),
+  };
+}
+
 function collectOperationStats(report) {
   const operations = Array.isArray(report?.operations) ? report.operations : [];
   const operationStats = new Map();
@@ -81,9 +101,10 @@ function collectOperationStats(report) {
 function evaluateThresholds(report, thresholdConfig, options) {
   const evaluationOptions = isPlainObject(options) ? options : {};
   const failOnMissing = evaluationOptions.failOnMissing !== false;
-  const thresholds = normalizeThresholds(
+  const thresholdEnvelope = normalizeThresholdEnvelope(
     thresholdConfig && Object.keys(thresholdConfig).length > 0 ? thresholdConfig : DEFAULT_THRESHOLDS
   );
+  const thresholds = thresholdEnvelope.operations;
   const operationStats = collectOperationStats(report);
   const failures = [];
 
@@ -94,6 +115,10 @@ function evaluateThresholds(report, thresholdConfig, options) {
         failures.push({
           type: 'missing_operation',
           operation: operationName,
+          metric: null,
+          actualMs: null,
+          thresholdMs: null,
+          profile: thresholdEnvelope.profile,
         });
       }
       continue;
@@ -106,17 +131,24 @@ function evaluateThresholds(report, thresholdConfig, options) {
           type: 'missing_metric',
           operation: operationName,
           metric: metricKey,
+          actualMs: null,
+          thresholdMs: roundMs(maxAllowedMs),
+          maxAllowedMs: roundMs(maxAllowedMs),
+          profile: thresholdEnvelope.profile,
         });
         continue;
       }
 
       if (actualMs > maxAllowedMs) {
+        const roundedThresholdMs = roundMs(maxAllowedMs);
         failures.push({
           type: 'threshold_exceeded',
           operation: operationName,
           metric: metricKey,
           actualMs: roundMs(actualMs),
-          maxAllowedMs: roundMs(maxAllowedMs),
+          thresholdMs: roundedThresholdMs,
+          maxAllowedMs: roundedThresholdMs,
+          profile: thresholdEnvelope.profile,
         });
       }
     }
@@ -125,6 +157,8 @@ function evaluateThresholds(report, thresholdConfig, options) {
   return {
     ok: failures.length === 0,
     checkedOperations: Object.keys(thresholds).length,
+    profile: thresholdEnvelope.profile,
+    thresholdVersion: thresholdEnvelope.version,
     failures,
   };
 }
@@ -135,17 +169,36 @@ function formatFailure(failure) {
   }
 
   if (failure.type === 'missing_operation') {
-    return `Missing operation in report: ${failure.operation}`;
+    return (
+      'Missing operation in report: ' +
+      `operation=${failure.operation} metric=n/a actual=n/a threshold=n/a` +
+      (failure.profile ? ` profile=${failure.profile}` : '')
+    );
   }
 
   if (failure.type === 'missing_metric') {
-    return `Missing metric in report: ${failure.operation}.${failure.metric}`;
+    const thresholdValue = Number.isFinite(failure.thresholdMs) ? `${failure.thresholdMs}ms` : 'n/a';
+    return (
+      'Missing metric in report: ' +
+      `operation=${failure.operation} metric=${failure.metric} actual=n/a threshold=${thresholdValue}` +
+      (failure.profile ? ` profile=${failure.profile}` : '')
+    );
   }
 
   if (failure.type === 'threshold_exceeded') {
+    const thresholdValue = Number.isFinite(failure.thresholdMs)
+      ? failure.thresholdMs
+      : Number.isFinite(failure.maxAllowedMs)
+      ? failure.maxAllowedMs
+      : 'n/a';
+    const actualValue = Number.isFinite(failure.actualMs) ? `${failure.actualMs}ms` : 'n/a';
+    const thresholdLabel =
+      typeof thresholdValue === 'number' ? `${thresholdValue}ms` : String(thresholdValue);
     return (
-      `Threshold exceeded: ${failure.operation}.${failure.metric} ` +
-      `actual=${failure.actualMs}ms threshold=${failure.maxAllowedMs}ms`
+      'Threshold exceeded: ' +
+      `operation=${failure.operation} metric=${failure.metric} ` +
+      `actual=${actualValue} threshold=${thresholdLabel}` +
+      (failure.profile ? ` profile=${failure.profile}` : '')
     );
   }
 
@@ -165,5 +218,6 @@ module.exports = {
   evaluateThresholds,
   formatFailure,
   formatFailures,
+  normalizeThresholdEnvelope,
   normalizeThresholds,
 };

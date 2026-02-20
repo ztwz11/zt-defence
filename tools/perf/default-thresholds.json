@@ -1,17 +1,21 @@
 {
-  "tickSimulation": {
-    "avgMs": 15,
-    "p95Ms": 30,
-    "maxMs": 60
-  },
-  "runWaveSlice": {
-    "avgMs": 20,
-    "p95Ms": 40,
-    "maxMs": 80
-  },
-  "runSessionShort": {
-    "avgMs": 35,
-    "p95Ms": 70,
-    "maxMs": 140
+  "version": "1.0.0",
+  "profile": "ci-mobile-baseline",
+  "operations": {
+    "tickSimulation": {
+      "avgMs": 15,
+      "p95Ms": 30,
+      "maxMs": 60
+    },
+    "runWaveSlice": {
+      "avgMs": 20,
+      "p95Ms": 40,
+      "maxMs": 80
+    },
+    "runSessionShort": {
+      "avgMs": 35,
+      "p95Ms": 70,
+      "maxMs": 140
+    }
   }
 }

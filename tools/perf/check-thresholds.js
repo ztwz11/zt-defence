@@ -82,6 +82,7 @@ function printHelp() {
     '',
     'Threshold format:',
     '  { "operationName": { "avgMs": 10, "p95Ms": 20, "maxMs": 30 } }',
+    '  { "version": "1.0.0", "profile": "ci-mobile-baseline", "operations": { ... } }',
   ];
 
   process.stdout.write(`${usage.join('\n')}\n`);
