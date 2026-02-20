@@ -94,6 +94,7 @@ test('ui adapter exposes current step text, progress, and skippable state', () =
 
   const inProgressModel = toTutorialUiModel(state);
   assert.deepEqual(inProgressModel, {
+    locale: 'en',
     status: TUTORIAL_STATUS.IN_PROGRESS,
     stepId: TUTORIAL_STEP.SUMMON,
     stepText: 'Summon units 3 times',
@@ -111,6 +112,7 @@ test('ui adapter exposes current step text, progress, and skippable state', () =
   completedState = recordSynergyTrigger(completedState);
   const completedModel = toTutorialUiModel(completedState);
   assert.deepEqual(completedModel, {
+    locale: 'en',
     status: TUTORIAL_STATUS.COMPLETED,
     stepId: TUTORIAL_STEP.COMPLETE,
     stepText: 'Tutorial complete',
@@ -124,6 +126,7 @@ test('ui adapter exposes current step text, progress, and skippable state', () =
 
   const skippedModel = toTutorialUiModel(skip(createTutorialState()));
   assert.deepEqual(skippedModel, {
+    locale: 'en',
     status: TUTORIAL_STATUS.SKIPPED,
     stepId: TUTORIAL_STEP.COMPLETE,
     stepText: 'Tutorial skipped',
@@ -134,4 +137,8 @@ test('ui adapter exposes current step text, progress, and skippable state', () =
     },
     skippable: false,
   });
+
+  const koreanModel = toTutorialUiModel(state, { locale: 'ko' });
+  assert.equal(koreanModel.locale, 'ko');
+  assert.equal(koreanModel.stepText, '유닛 3회 소환');
 });

@@ -104,14 +104,32 @@ test('HUD bindings reflect state updates', () => {
   const initialHud = store.getHudViewModel();
   assert.equal(initialHud.ok, true);
   assert.deepEqual(initialHud.value, {
+    locale: 'en',
     gold: 9,
     wave: 3,
     gateHp: 18,
     phase: 'Prepare',
+    phaseLabel: 'Prepare',
     summonCost: 4,
     rerollCost: 2,
     synergyCounts: [{ synergyId: 'syn_knights', count: 2 }],
     relics: ['relic_bonus_gold'],
+    optionLabels: {
+      locale: 'en',
+      hudActions: {
+        summon: 'Summon',
+        reroll: 'Reroll',
+      },
+      hudOptions: {
+        timer: 'Timer',
+        speed: 'Speed',
+      },
+      settings: {
+        sfx: 'Sound',
+        vibration: 'Vibration',
+        lowFxMode: 'Low FX Mode',
+      },
+    },
   });
 
   const update = store.setState({
@@ -127,11 +145,18 @@ test('HUD bindings reflect state updates', () => {
   assert.equal(updatedHud.value.gold, 15);
   assert.equal(updatedHud.value.wave, 4);
   assert.equal(updatedHud.value.gateHp, 17);
+  assert.equal(updatedHud.value.phaseLabel, 'Prepare');
   assert.deepEqual(updatedHud.value.synergyCounts, [{ synergyId: 'syn_knights', count: 3 }]);
 
   updatedHud.value.relics.push('mutated');
   const hudAfterMutation = store.getHudViewModel();
   assert.deepEqual(hudAfterMutation.value.relics, ['relic_bonus_gold']);
+
+  store.setLocale('ko');
+  const koreanHud = store.getHudViewModel();
+  assert.equal(koreanHud.value.locale, 'ko');
+  assert.equal(koreanHud.value.phaseLabel, '준비');
+  assert.equal(koreanHud.value.optionLabels.settings.sfx, '사운드');
 });
 
 test('run slice returns deterministic output for identical seed and context', () => {
@@ -153,4 +178,3 @@ test('run slice returns deterministic output for identical seed and context', ()
   assert.equal(runA.value.hud.wave, 3);
   assert.ok(runA.value.render.frames.length > 0);
 });
-

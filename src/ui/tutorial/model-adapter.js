@@ -6,16 +6,19 @@ const {
   createTutorialState,
   getCurrentStep,
 } = require('../../game/tutorial');
-
-const STEP_TEXT = Object.freeze({
-  [TUTORIAL_STEP.SUMMON]: 'Summon units 3 times',
-  [TUTORIAL_STEP.MERGE]: 'Merge units 1 time',
-  [TUTORIAL_STEP.SYNERGY]: 'Trigger 1 synergy',
-  [TUTORIAL_STEP.COMPLETE]: 'Tutorial complete',
-});
+const { createUiTextBundle, normalizeUiLocale } = require('../localization');
 
 function isPlainObject(value) {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+function resolveUiLocale(options) {
+  if (typeof options === 'string') {
+    return normalizeUiLocale(options);
+  }
+
+  const source = isPlainObject(options) ? options : {};
+  return normalizeUiLocale(source.locale);
 }
 
 function resolveStatus(state) {
@@ -64,25 +67,54 @@ function resolveProgress(status, step) {
   };
 }
 
-function toTutorialUiModel(state) {
+function resolveStepText(stepId, status, textBundle) {
+  const tutorialText = isPlainObject(textBundle?.tutorial)
+    ? textBundle.tutorial
+    : {};
+  const stepTextMap = isPlainObject(tutorialText.steps) ? tutorialText.steps : {};
+  const fallbackTextMap = {
+    [TUTORIAL_STEP.SUMMON]: 'Summon units 3 times',
+    [TUTORIAL_STEP.MERGE]: 'Merge units 1 time',
+    [TUTORIAL_STEP.SYNERGY]: 'Trigger 1 synergy',
+    [TUTORIAL_STEP.COMPLETE]: 'Tutorial complete',
+  };
+
+  if (status === TUTORIAL_STATUS.SKIPPED) {
+    return typeof tutorialText.skipped === 'string'
+      ? tutorialText.skipped
+      : 'Tutorial skipped';
+  }
+
+  if (status === TUTORIAL_STATUS.COMPLETED) {
+    const completedText = stepTextMap[TUTORIAL_STEP.COMPLETE];
+    return typeof completedText === 'string'
+      ? completedText
+      : fallbackTextMap[TUTORIAL_STEP.COMPLETE];
+  }
+
+  const currentStepText = stepTextMap[stepId];
+  if (typeof currentStepText === 'string') {
+    return currentStepText;
+  }
+
+  return fallbackTextMap[stepId] || fallbackTextMap[TUTORIAL_STEP.SUMMON];
+}
+
+function toTutorialUiModel(state, options) {
   const safeState = isPlainObject(state) ? state : createTutorialState();
+  const locale = resolveUiLocale(options);
+  const textBundle = createUiTextBundle(locale);
   const status = resolveStatus(safeState);
   const currentStep = getCurrentStep(safeState);
 
-  let stepText = STEP_TEXT[currentStep.id] || STEP_TEXT[TUTORIAL_STEP.SUMMON];
-  if (status === TUTORIAL_STATUS.COMPLETED) {
-    stepText = STEP_TEXT[TUTORIAL_STEP.COMPLETE];
-  } else if (status === TUTORIAL_STATUS.SKIPPED) {
-    stepText = 'Tutorial skipped';
-  }
-
   return {
+    locale,
     status,
     stepId:
       status === TUTORIAL_STATUS.IN_PROGRESS
         ? currentStep.id
         : TUTORIAL_STEP.COMPLETE,
-    stepText,
+    stepText: resolveStepText(currentStep.id, status, textBundle),
     progress: resolveProgress(status, currentStep),
     skippable: resolveCanSkip(status, safeState),
   };

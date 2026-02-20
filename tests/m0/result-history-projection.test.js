@@ -83,7 +83,9 @@ test('screen adapters provide stable screen models', () => {
   const historyScreen = createHistoryScreenModel([entry]);
 
   assert.deepEqual(resultScreen, {
+    locale: 'en',
     screenId: 'Result',
+    screenLabel: 'Result',
     result: 'fail',
     runSeed: 424242,
     stats: {
@@ -97,8 +99,15 @@ test('screen adapters provide stable screen models', () => {
   });
 
   assert.deepEqual(historyScreen, {
+    locale: 'en',
     screenId: 'History',
+    screenLabel: 'History',
     totalEntries: 1,
     entries: [entry],
   });
+
+  const koResultScreen = createResultScreenModel(resultVm, { locale: 'ko' });
+  const koHistoryScreen = createHistoryScreenModel([entry], { locale: 'ko' });
+  assert.equal(koResultScreen.screenLabel, '결과');
+  assert.equal(koHistoryScreen.screenLabel, '기록');
 });
