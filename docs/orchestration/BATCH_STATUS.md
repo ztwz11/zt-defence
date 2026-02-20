@@ -109,19 +109,37 @@
 | Y auto-tune report schema/export | worker-agent | Completed | `tools/balance/auto-tune.js`, `tools/balance/run-auto-tune.js`, `tests/balance/auto-tune.test.js` | report + objective wiring pass |
 | Batch 12 integration | codex-main | Completed | `tools/check-release-readiness.py`, `.github/workflows/release-readiness.yml` | release readiness gate integrated |
 
+## Batch 13 Completion (chapter-scoped tuning contracts)
+
+| Module | Owner | Status | Owned Paths | Checks |
+| --- | --- | --- | --- | --- |
+| Z chapter-scoped gate profiles | codex-main | Completed | `tools/balance/tuning-gate-config.json`, `tools/balance/run-tuning-gate.js`, `tests/balance/tuning-gate.test.js` | chapter profile resolution tests pass |
+| Batch 13 integration | codex-main | Completed | `tools/balance/run-tuning-gate.js`, `tools/check-release-readiness.py` | chapter-aware gate execution pass |
+
+## Batch 14 Completion (observability artifacts)
+
+| Module | Owner | Status | Owned Paths | Checks |
+| --- | --- | --- | --- | --- |
+| AA tuning gate top-N artifact export | codex-main | Completed | `tools/balance/run-tuning-gate.js`, `tests/balance/tuning-gate.test.js` | output/top-candidates tests pass |
+| AB release-readiness artifact outputs | codex-main | Completed | `tools/check-release-readiness.py` | `.tmp/release-readiness/*.json` emitted |
+| AC CI artifact upload wiring | codex-main | Completed | `.github/workflows/release-readiness.yml` | GitHub artifact upload configured |
+
 ## Current Gate Snapshot
 
-1. `node tools/perf/run-and-check.js --profile=ci-mobile-baseline --iterations=200` -> `PASS`
-2. `node tools/balance/run-tuning-gate.js` -> `PASS` (`score=0.274286`)
+1. `node tools/perf/run-and-check.js --profile=ci-mobile-baseline --iterations=200 --output=.tmp/release-readiness/perf-gate-report.json` -> `PASS`
+2. `node tools/balance/run-tuning-gate.js --output=.tmp/release-readiness/tuning-gate-report.json --top-candidates=10` -> `PASS` (`score=0.274286`)
 3. `python tools/check-release-readiness.py` -> `PASS`
+4. local gate artifacts generated:
+   - `.tmp/release-readiness/perf-gate-report.json`
+   - `.tmp/release-readiness/tuning-gate-report.json`
 
 ## Remaining Blockers
 
-1. No blocking issue for Batch 11/12 release-gate scope.
-2. Next risk is objective realism for future chapters (current chapter_1 tuning still has a steep clear/fail boundary).
+1. No blocking issue for Batch 11-14 release-gate scope.
+2. Next risk is chapter_2+ objective calibration once additional chapter presets/simulation data are introduced.
 
 ## Next Parallel Batch Plan
 
-1. Batch 13: expand objective/parameter contracts for multi-chapter tuning (chapter-specific targets + thresholds).
-2. Batch 14: strengthen observability outputs (persist top-N candidate reports and CI artifacts for trend tracking).
+1. Batch 15: add chapter_2 balance preset + chapter-scoped smoke validation path.
+2. Batch 16: add trend/diff checker for perf+tuning artifacts between commits.
 

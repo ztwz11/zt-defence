@@ -11,6 +11,44 @@
       "maxFailRate": 0.35
     }
   },
+  "chapters": {
+    "chapter_1": {
+      "autoTuneDefaults": {
+        "chapter": "chapter_1",
+        "waveMax": 20,
+        "seeds": 200,
+        "candidates": 24,
+        "searchSeed": 2026,
+        "objective": {
+          "targetClearRate": 0.55,
+          "targetReachedWave": 14,
+          "maxFailRate": 0.35
+        }
+      },
+      "thresholds": {
+        "passMaxScore": 0.75,
+        "warnMaxScore": 1.25
+      }
+    },
+    "chapter_2": {
+      "autoTuneDefaults": {
+        "chapter": "chapter_2",
+        "waveMax": 20,
+        "seeds": 200,
+        "candidates": 24,
+        "searchSeed": 2027,
+        "objective": {
+          "targetClearRate": 0.5,
+          "targetReachedWave": 12,
+          "maxFailRate": 0.4
+        }
+      },
+      "thresholds": {
+        "passMaxScore": 0.9,
+        "warnMaxScore": 1.4
+      }
+    }
+  },
   "thresholds": {
     "passMaxScore": 0.75,
     "warnMaxScore": 1.25

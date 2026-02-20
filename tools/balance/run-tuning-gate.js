@@ -111,6 +111,109 @@ function parseJson(text, description, filePath) {
   }
 }
 
+function normalizeChapterId(value) {
+  if (typeof value !== 'string') {
+    return null;
+  }
+
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
+
+function mergeScopedConfig(baseConfig, scopedConfig) {
+  const merged = isPlainObject(baseConfig) ? { ...baseConfig } : {};
+  delete merged.chapters;
+
+  if (!isPlainObject(scopedConfig)) {
+    return merged;
+  }
+
+  const sectionKeys = ['autoTuneDefaults', 'thresholds', 'recommendations'];
+  for (const key of sectionKeys) {
+    const baseSection = isPlainObject(merged[key]) ? merged[key] : {};
+    const scopedSection = isPlainObject(scopedConfig[key]) ? scopedConfig[key] : {};
+    merged[key] = {
+      ...baseSection,
+      ...scopedSection,
+    };
+  }
+
+  return merged;
+}
+
+function resolveScopedConfig(parsedConfig, parsedArgs) {
+  const baseConfig = isPlainObject(parsedConfig) ? parsedConfig : {};
+  const sourceArgs = isPlainObject(parsedArgs) ? parsedArgs : {};
+  const chapters = isPlainObject(baseConfig.chapters) ? baseConfig.chapters : {};
+  const availableChapterIds = Object.keys(chapters).sort();
+  const requestedChapterId = normalizeChapterId(getArgValue(sourceArgs, ['chapter', 'chapter-id'], null));
+
+  let selectedChapterId = requestedChapterId;
+  let chapterConfig = null;
+  if (requestedChapterId && isPlainObject(chapters[requestedChapterId])) {
+    chapterConfig = chapters[requestedChapterId];
+  }
+
+  if (!selectedChapterId) {
+    const baseDefaults = isPlainObject(baseConfig.autoTuneDefaults) ? baseConfig.autoTuneDefaults : {};
+    const defaultChapterId = normalizeChapterId(baseDefaults.chapter ?? baseDefaults.chapterId);
+    if (defaultChapterId) {
+      selectedChapterId = defaultChapterId;
+      if (isPlainObject(chapters[defaultChapterId])) {
+        chapterConfig = chapters[defaultChapterId];
+      }
+    }
+  }
+
+  return {
+    requestedChapterId,
+    selectedChapterId,
+    hasChapterOverride: Boolean(chapterConfig),
+    availableChapterIds,
+    config: mergeScopedConfig(baseConfig, chapterConfig),
+  };
+}
+
+function resolveTopCandidatesLimit(value, fallback) {
+  if (value === undefined || value === null || value === '') {
+    return fallback;
+  }
+
+  return toNonNegativeInteger(value, fallback);
+}
+
+function buildTopCandidates(report, limit) {
+  if (!Number.isFinite(limit) || limit <= 0) {
+    return [];
+  }
+
+  const sourceReport = isPlainObject(report) ? report : {};
+  const rankedCandidates = Array.isArray(sourceReport.rankedCandidates) ? sourceReport.rankedCandidates : [];
+  if (rankedCandidates.length > 0) {
+    return rankedCandidates.slice(0, limit);
+  }
+
+  if (isPlainObject(sourceReport.bestCandidate)) {
+    return [sourceReport.bestCandidate];
+  }
+
+  return [];
+}
+
+function writeJsonReportFile(outputPath, payload, dependencies) {
+  const options = dependencies && typeof dependencies === 'object' ? dependencies : {};
+  const mkdirSync = typeof options.mkdirSync === 'function' ? options.mkdirSync : fs.mkdirSync;
+  const writeFileSync = typeof options.writeFileSync === 'function' ? options.writeFileSync : fs.writeFileSync;
+  const resolvePath = typeof options.resolvePath === 'function' ? options.resolvePath : path.resolve;
+  const dirname = typeof options.dirname === 'function' ? options.dirname : path.dirname;
+  const cwd = typeof options.cwd === 'function' ? options.cwd() : process.cwd();
+
+  const resolvedPath = resolvePath(cwd, outputPath);
+  mkdirSync(dirname(resolvedPath), { recursive: true });
+  writeFileSync(resolvedPath, JSON.stringify(payload, null, 2));
+  return resolvedPath;
+}
+
 function normalizeAutoTuneDefaults(source) {
   const parsed = isPlainObject(source) ? source : {};
   const defaults = isPlainObject(parsed.autoTuneDefaults) ? parsed.autoTuneDefaults : {};
@@ -202,6 +305,7 @@ function runTuningGate(parsedArgs, dependencies) {
   const options = dependencies && typeof dependencies === 'object' ? dependencies : {};
   const readFileSync = typeof options.readFileSync === 'function' ? options.readFileSync : fs.readFileSync;
   const runAutoTuneFn = typeof options.runAutoTune === 'function' ? options.runAutoTune : runAutoTune;
+  const now = typeof options.now === 'function' ? options.now : () => new Date().toISOString();
 
   const configPath = resolveInputPath(
     getArgValue(sourceArgs, ['config'], DEFAULT_GATE_CONFIG_PATH),
@@ -209,11 +313,26 @@ function runTuningGate(parsedArgs, dependencies) {
   );
   const configText = readTextFile(configPath, 'config', readFileSync);
   const parsedConfig = parseTuningGateConfig(configText);
-  const gateConfig = normalizeTuningGateConfig(parsedConfig);
-  const autoTuneDefaults = normalizeAutoTuneDefaults(parsedConfig);
+  const scoped = resolveScopedConfig(parsedConfig, sourceArgs);
+  const gateConfig = normalizeTuningGateConfig(scoped.config);
+  const autoTuneDefaults = normalizeAutoTuneDefaults(scoped.config);
 
   const reportArg = getArgValue(sourceArgs, ['report'], null);
   const failOnWarn = toBooleanFlag(getArgValue(sourceArgs, ['fail-on-warn'], false), false);
+  const outputArg = getArgValue(sourceArgs, ['output'], null);
+  const outputPath = resolveInputPath(outputArg, null);
+  const topCandidatesLimit = resolveTopCandidatesLimit(
+    getArgValue(sourceArgs, ['top-candidates', 'topn'], 5),
+    5
+  );
+
+  if (
+    outputArg !== null &&
+    outputArg !== undefined &&
+    (typeof outputArg !== 'string' || outputPath === null)
+  ) {
+    throw new Error('TUNING_GATE_INVALID_OUTPUT_PATH: expected --output=<path>');
+  }
 
   let reportSource = 'auto-tune';
   let reportPath = null;
@@ -231,14 +350,44 @@ function runTuningGate(parsedArgs, dependencies) {
 
   const evaluation = evaluateTuningGateReport(autoTuneReport, gateConfig);
   const exitCode = resolveGateExitCode(evaluation.status, failOnWarn);
+  const topCandidates = buildTopCandidates(autoTuneReport, topCandidatesLimit);
+  const outputPayload = {
+    generatedAt: now(),
+    configPath,
+    chapterProfile: {
+      requestedChapterId: scoped.requestedChapterId,
+      selectedChapterId: scoped.selectedChapterId,
+      hasChapterOverride: scoped.hasChapterOverride,
+      availableChapterIds: scoped.availableChapterIds,
+    },
+    failOnWarn,
+    reportSource,
+    reportPath,
+    evaluation,
+    thresholds: gateConfig.thresholds,
+    bestCandidate: isPlainObject(autoTuneReport?.bestCandidate) ? autoTuneReport.bestCandidate : null,
+    topCandidates,
+  };
+
+  const savedOutputPath = outputPath ? writeJsonReportFile(outputPath, outputPayload, options) : null;
 
   return {
     configPath,
+    chapterProfile: {
+      requestedChapterId: scoped.requestedChapterId,
+      selectedChapterId: scoped.selectedChapterId,
+      hasChapterOverride: scoped.hasChapterOverride,
+      availableChapterIds: scoped.availableChapterIds,
+    },
     failOnWarn,
     reportSource,
     reportPath,
     evaluation,
     exitCode,
+    topCandidatesLimit,
+    topCandidates,
+    outputPath: savedOutputPath,
+    outputPayload,
     report: autoTuneReport,
     config: gateConfig,
   };
@@ -248,13 +397,19 @@ function main() {
   const parsedArgs = parseCliArgs(process.argv.slice(2));
   const result = runTuningGate(parsedArgs);
 
+  if (result.outputPath) {
+    process.stderr.write(`[tuning-gate] Wrote report to ${result.outputPath}\n`);
+  }
+
   process.stdout.write(
     `${JSON.stringify(
       {
         configPath: result.configPath,
+        chapterProfile: result.chapterProfile,
         failOnWarn: result.failOnWarn,
         reportSource: result.reportSource,
         reportPath: result.reportPath,
+        outputPath: result.outputPath,
         evaluation: result.evaluation,
       },
       null,
@@ -282,7 +437,11 @@ module.exports = {
   toBooleanFlag,
   resolveInputPath,
   normalizeAutoTuneDefaults,
+  resolveScopedConfig,
+  resolveTopCandidatesLimit,
+  buildTopCandidates,
   mergeParsedArgsWithAutoTuneDefaults,
+  writeJsonReportFile,
   resolveGateExitCode,
   runTuningGate,
   main,

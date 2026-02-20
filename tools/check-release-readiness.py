@@ -29,6 +29,7 @@ CHECKS = [
             "tools/perf/run-and-check.js",
             "--profile=ci-mobile-baseline",
             "--iterations=200",
+            "--output=.tmp/release-readiness/perf-gate-report.json",
         ],
     ),
     (
@@ -36,6 +37,8 @@ CHECKS = [
         [
             "node",
             "tools/balance/run-tuning-gate.js",
+            "--output=.tmp/release-readiness/tuning-gate-report.json",
+            "--top-candidates=10",
         ],
     ),
 ]
