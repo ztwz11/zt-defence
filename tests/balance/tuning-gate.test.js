@@ -11,7 +11,12 @@ const {
   normalizeTuningGateConfig,
   evaluateTuningGateReport,
 } = require('../../tools/balance/tuning-gate');
-const { resolveGateExitCode, runTuningGate } = require('../../tools/balance/run-tuning-gate');
+const {
+  resolveGateExitCode,
+  normalizeAutoTuneDefaults,
+  mergeParsedArgsWithAutoTuneDefaults,
+  runTuningGate,
+} = require('../../tools/balance/run-tuning-gate');
 
 test('evaluateTuningGateReport applies PASS/WARN/FAIL threshold boundaries', () => {
   const parsedConfig = parseTuningGateConfig(
@@ -109,6 +114,18 @@ test('runTuningGate supports --report mode and default internal auto-tune mode',
   const reportPath = 'C:\\auto-tune-report.json';
   const fileMap = {
     [configPath]: JSON.stringify({
+      autoTuneDefaults: {
+        chapter: 'chapter_2',
+        waveMax: 12,
+        seeds: 64,
+        candidates: 16,
+        searchSeed: 404,
+        objective: {
+          targetClearRate: 0.6,
+          targetReachedWave: 9,
+          maxFailRate: 0.3,
+        },
+      },
       thresholds: {
         passMaxScore: 0.5,
         warnMaxScore: 1,
@@ -160,8 +177,18 @@ test('runTuningGate supports --report mode and default internal auto-tune mode',
     },
     {
       readFileSync,
-      runAutoTune() {
+      runAutoTune(receivedOptions) {
         autoTuneCallCount += 1;
+        assert.equal(receivedOptions.chapterId, 'chapter_2');
+        assert.equal(receivedOptions.waveMax, 12);
+        assert.equal(receivedOptions.seedCount, 64);
+        assert.equal(receivedOptions.candidateCount, 16);
+        assert.equal(receivedOptions.searchSeed, 404);
+        assert.deepEqual(receivedOptions.objective, {
+          targetClearRate: 0.6,
+          targetReachedWave: 9,
+          maxFailRate: 0.3,
+        });
         return {
           bestCandidate: {
             score: 0.1,
@@ -176,4 +203,51 @@ test('runTuningGate supports --report mode and default internal auto-tune mode',
   assert.equal(internalModeResult.evaluation.status, STATUS_PASS);
   assert.equal(internalModeResult.exitCode, 0);
   assert.equal(autoTuneCallCount, 1);
+});
+
+test('config auto tune defaults can be merged and overridden by cli args', () => {
+  const defaults = normalizeAutoTuneDefaults({
+    autoTuneDefaults: {
+      chapterId: 'chapter_1',
+      waveMax: 20,
+      seeds: 100,
+      candidates: 24,
+      searchSeed: 2026,
+      objective: {
+        targetClearRate: 0.55,
+        targetReachedWave: 14,
+        maxFailRate: 0.35,
+      },
+      weights: {
+        clearRate: 1,
+      },
+    },
+  });
+
+  assert.equal(defaults.chapter, 'chapter_1');
+  assert.equal(defaults['wave-max'], 20);
+  assert.equal(defaults.seeds, 100);
+  assert.equal(defaults.candidates, 24);
+  assert.equal(defaults['search-seed'], 2026);
+  assert.equal(defaults['target-clear'], 0.55);
+  assert.equal(defaults['target-wave'], 14);
+  assert.equal(defaults['max-fail'], 0.35);
+  assert.equal(defaults['weight-clear'], 1);
+
+  const merged = mergeParsedArgsWithAutoTuneDefaults(
+    {
+      chapter: 'chapter_3',
+      'wave-max': 16,
+      seeds: 40,
+      'target-wave': 10,
+    },
+    defaults
+  );
+
+  assert.equal(merged.chapter, 'chapter_3');
+  assert.equal(merged['wave-max'], 16);
+  assert.equal(merged.seeds, 40);
+  assert.equal(merged['target-wave'], 10);
+  assert.equal(merged['search-seed'], 2026);
+  assert.equal(merged['target-clear'], 0.55);
 });

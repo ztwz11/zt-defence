@@ -16,6 +16,23 @@ const {
 
 const DEFAULT_GATE_CONFIG_PATH = path.join(__dirname, 'tuning-gate-config.json');
 
+function isPlainObject(value) {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+function toFiniteNumber(value, fallback) {
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? numeric : fallback;
+}
+
+function toPositiveInteger(value, fallback) {
+  return Math.max(1, Math.floor(toFiniteNumber(value, fallback)));
+}
+
+function toNonNegativeInteger(value, fallback) {
+  return Math.max(0, Math.floor(toFiniteNumber(value, fallback)));
+}
+
 function toBooleanFlag(value, fallback) {
   if (value === true) {
     return true;
@@ -94,6 +111,80 @@ function parseJson(text, description, filePath) {
   }
 }
 
+function normalizeAutoTuneDefaults(source) {
+  const parsed = isPlainObject(source) ? source : {};
+  const defaults = isPlainObject(parsed.autoTuneDefaults) ? parsed.autoTuneDefaults : {};
+  const objective = isPlainObject(defaults.objective) ? defaults.objective : {};
+  const weights = isPlainObject(objective.weights)
+    ? objective.weights
+    : isPlainObject(defaults.weights)
+      ? defaults.weights
+      : {};
+
+  const normalized = {};
+  if (typeof defaults.chapter === 'string' && defaults.chapter.trim().length > 0) {
+    normalized.chapter = defaults.chapter.trim();
+  } else if (typeof defaults.chapterId === 'string' && defaults.chapterId.trim().length > 0) {
+    normalized.chapter = defaults.chapterId.trim();
+  }
+
+  if (Number.isFinite(Number(defaults.waveMax))) {
+    normalized['wave-max'] = toPositiveInteger(defaults.waveMax, 20);
+  }
+  if (Number.isFinite(Number(defaults.seeds ?? defaults.seedCount))) {
+    normalized.seeds = toPositiveInteger(defaults.seeds ?? defaults.seedCount, 100);
+  }
+  if (Number.isFinite(Number(defaults.candidates ?? defaults.candidateCount))) {
+    normalized.candidates = toPositiveInteger(defaults.candidates ?? defaults.candidateCount, 24);
+  }
+  if (Number.isFinite(Number(defaults.searchSeed))) {
+    normalized['search-seed'] = toNonNegativeInteger(defaults.searchSeed, 1337);
+  }
+
+  const targetClearCandidate = defaults.targetClear ?? objective.targetClearRate;
+  if (Number.isFinite(Number(targetClearCandidate))) {
+    normalized['target-clear'] = Number(targetClearCandidate);
+  }
+
+  const targetWaveCandidate = defaults.targetWave ?? objective.targetReachedWave;
+  if (Number.isFinite(Number(targetWaveCandidate))) {
+    normalized['target-wave'] = Number(targetWaveCandidate);
+  }
+
+  const maxFailCandidate = defaults.maxFail ?? objective.maxFailRate;
+  if (Number.isFinite(Number(maxFailCandidate))) {
+    normalized['max-fail'] = Number(maxFailCandidate);
+  }
+
+  const clearWeightCandidate = weights.clearRate;
+  if (Number.isFinite(Number(clearWeightCandidate))) {
+    normalized['weight-clear'] = Number(clearWeightCandidate);
+  }
+  const waveWeightCandidate = weights.reachedWave;
+  if (Number.isFinite(Number(waveWeightCandidate))) {
+    normalized['weight-wave'] = Number(waveWeightCandidate);
+  }
+  const failWeightCandidate = weights.failRateOverflow;
+  if (Number.isFinite(Number(failWeightCandidate))) {
+    normalized['weight-fail'] = Number(failWeightCandidate);
+  }
+  const continueWeightCandidate = weights.continueRate;
+  if (Number.isFinite(Number(continueWeightCandidate))) {
+    normalized['weight-continue'] = Number(continueWeightCandidate);
+  }
+
+  return normalized;
+}
+
+function mergeParsedArgsWithAutoTuneDefaults(parsedArgs, autoTuneDefaults) {
+  const sourceArgs = isPlainObject(parsedArgs) ? parsedArgs : {};
+  const defaults = isPlainObject(autoTuneDefaults) ? autoTuneDefaults : {};
+  return {
+    ...defaults,
+    ...sourceArgs,
+  };
+}
+
 function resolveGateExitCode(status, failOnWarn) {
   if (status === STATUS_FAIL) {
     return 1;
@@ -117,7 +208,9 @@ function runTuningGate(parsedArgs, dependencies) {
     DEFAULT_GATE_CONFIG_PATH
   );
   const configText = readTextFile(configPath, 'config', readFileSync);
-  const gateConfig = normalizeTuningGateConfig(parseTuningGateConfig(configText));
+  const parsedConfig = parseTuningGateConfig(configText);
+  const gateConfig = normalizeTuningGateConfig(parsedConfig);
+  const autoTuneDefaults = normalizeAutoTuneDefaults(parsedConfig);
 
   const reportArg = getArgValue(sourceArgs, ['report'], null);
   const failOnWarn = toBooleanFlag(getArgValue(sourceArgs, ['fail-on-warn'], false), false);
@@ -131,7 +224,8 @@ function runTuningGate(parsedArgs, dependencies) {
     const reportText = readTextFile(reportPath, 'report', readFileSync);
     autoTuneReport = parseJson(reportText, 'report', reportPath);
   } else {
-    const autoTuneOptions = buildAutoTuneOptions(sourceArgs);
+    const mergedArgs = mergeParsedArgsWithAutoTuneDefaults(sourceArgs, autoTuneDefaults);
+    const autoTuneOptions = buildAutoTuneOptions(mergedArgs);
     autoTuneReport = runAutoTuneFn(autoTuneOptions);
   }
 
@@ -187,6 +281,8 @@ module.exports = {
   DEFAULT_GATE_CONFIG_PATH,
   toBooleanFlag,
   resolveInputPath,
+  normalizeAutoTuneDefaults,
+  mergeParsedArgsWithAutoTuneDefaults,
   resolveGateExitCode,
   runTuningGate,
   main,

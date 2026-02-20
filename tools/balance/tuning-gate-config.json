@@ -1,4 +1,16 @@
 {
+  "autoTuneDefaults": {
+    "chapter": "chapter_1",
+    "waveMax": 20,
+    "seeds": 200,
+    "candidates": 24,
+    "searchSeed": 2026,
+    "objective": {
+      "targetClearRate": 0.55,
+      "targetReachedWave": 14,
+      "maxFailRate": 0.35
+    }
+  },
   "thresholds": {
     "passMaxScore": 0.75,
     "warnMaxScore": 1.25

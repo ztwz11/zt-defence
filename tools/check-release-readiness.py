@@ -36,14 +36,6 @@ CHECKS = [
         [
             "node",
             "tools/balance/run-tuning-gate.js",
-            "--chapter=chapter_1",
-            "--wave-max=20",
-            "--seeds=200",
-            "--candidates=24",
-            "--search-seed=2026",
-            "--target-clear=0.55",
-            "--target-wave=14",
-            "--max-fail=0.35",
         ],
     ),
 ]
