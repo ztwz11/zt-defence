@@ -25,13 +25,13 @@ const DEFAULT_PARAMETER_SPACE = Object.freeze({
     step: 1,
   }),
   goblinHpScale: Object.freeze({
-    min: 0.8,
-    max: 1.3,
+    min: 1.3,
+    max: 1.8,
     step: 0.05,
   }),
   goblinEliteHpScale: Object.freeze({
-    min: 0.8,
-    max: 1.35,
+    min: 1.3,
+    max: 1.8,
     step: 0.05,
   }),
 });
