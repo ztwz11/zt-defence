@@ -103,6 +103,103 @@ const CHAPTER_PRESETS = Object.freeze({
       ]),
     }),
   }),
+  chapter_2: Object.freeze({
+    gateHp: 20,
+    maxGateHp: 20,
+    gold: 6,
+    economyConfig: Object.freeze({
+      waveStartGold: 3,
+      waveClearBonusGold: 4,
+      interest: Object.freeze({
+        enabled: false,
+      }),
+      costs: Object.freeze({
+        summon: 4,
+        reroll: Object.freeze({
+          base: 2,
+          increasePerUse: 1,
+        }),
+      }),
+    }),
+    rewards: Object.freeze([
+      Object.freeze({
+        type: 'Gold',
+        amount: 2,
+      }),
+    ]),
+    simulation: Object.freeze({
+      tickSeconds: 0.25,
+      durationSeconds: 10,
+      spawnEvents: Object.freeze([
+        Object.freeze({
+          time: 0,
+          enemyId: 'raider_goblin',
+          count: 5,
+          interval: 0.6,
+        }),
+        Object.freeze({
+          time: 2,
+          enemyId: 'hex_shaman',
+          count: 1,
+          interval: 1.2,
+        }),
+        Object.freeze({
+          time: 2.2,
+          enemyId: 'orc_brute',
+          count: 1,
+          interval: 0,
+        }),
+      ]),
+      enemyCatalog: Object.freeze({
+        raider_goblin: Object.freeze({
+          hp: 24,
+          armor: 2,
+          resist: 0,
+          moveSpeed: 0.16,
+        }),
+        orc_brute: Object.freeze({
+          hp: 58,
+          armor: 8,
+          resist: 4,
+          moveSpeed: 0.14,
+        }),
+        hex_shaman: Object.freeze({
+          hp: 44,
+          armor: 2,
+          resist: 10,
+          moveSpeed: 0.13,
+        }),
+      }),
+      units: Object.freeze([
+        Object.freeze({
+          id: 'archer_1',
+          atk: 17,
+          atkSpeed: 1.3,
+          damageType: 'physical',
+          targeting: 'random',
+          critChance: 0.25,
+          critMultiplier: 1.7,
+        }),
+        Object.freeze({
+          id: 'mage_1',
+          atk: 9,
+          atkSpeed: 1,
+          damageType: 'magic',
+          targeting: 'frontMost',
+          critChance: 0.1,
+          critMultiplier: 1.6,
+          onHitStatuses: Object.freeze([
+            Object.freeze({
+              statusId: 'burn',
+              chance: 0.35,
+              duration: 2.5,
+              potency: 2,
+            }),
+          ]),
+        }),
+      ]),
+    }),
+  }),
 });
 
 function resolveChapterPreset(chapterId) {

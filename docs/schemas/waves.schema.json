@@ -21,6 +21,11 @@
           "spawns"
         ],
         "properties": {
+          "chapterId": {
+            "type": "string",
+            "pattern": "^chapter_[a-z0-9_]+$",
+            "default": "chapter_1"
+          },
           "waveNumber": {
             "type": "integer",
             "minimum": 1

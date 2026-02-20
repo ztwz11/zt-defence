@@ -28,6 +28,11 @@
             "pattern": "^[a-z][a-z0-9_\\-\\.]*$",
             "description": "lower_snake_case 권장. 예: knight_sword, fire_mage"
           },
+          "chapterId": {
+            "type": "string",
+            "pattern": "^chapter_[a-z0-9_]+$",
+            "default": "chapter_1"
+          },
           "name": {
             "type": "string"
           },

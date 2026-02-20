@@ -37,6 +37,16 @@ const DEFAULT_PARAMETER_SPACE = Object.freeze({
 });
 
 const DEFAULT_PARAMETER_KEYS = Object.freeze(Object.keys(DEFAULT_PARAMETER_SPACE));
+const CHAPTER_TUNING_ENEMY_IDS = Object.freeze({
+  chapter_1: Object.freeze({
+    primary: 'goblin',
+    elite: 'goblin_elite',
+  }),
+  chapter_2: Object.freeze({
+    primary: 'raider_goblin',
+    elite: 'orc_brute',
+  }),
+});
 
 function isPlainObject(value) {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -365,6 +375,14 @@ function scaleEnemyHp(enemyCatalog, enemyId, scale) {
   enemy.hp = roundTo(Math.max(0, hp) * Math.max(0, scale), 4);
 }
 
+function resolveChapterTuningEnemyIds(chapterId) {
+  if (typeof chapterId === 'string' && CHAPTER_TUNING_ENEMY_IDS[chapterId]) {
+    return CHAPTER_TUNING_ENEMY_IDS[chapterId];
+  }
+
+  return CHAPTER_TUNING_ENEMY_IDS.chapter_1;
+}
+
 function applyCandidateToChapterContext(chapterContext, candidate) {
   const clonedContext = isPlainObject(chapterContext) ? cloneJson(chapterContext) : {};
   const sourceCandidate = isPlainObject(candidate) ? candidate : {};
@@ -373,6 +391,7 @@ function applyCandidateToChapterContext(chapterContext, candidate) {
   const costs = ensureObject(economyConfig, 'costs');
   const simulation = ensureObject(clonedContext, 'simulation');
   const enemyCatalog = ensureObject(simulation, 'enemyCatalog');
+  const chapterTuningEnemyIds = resolveChapterTuningEnemyIds(clonedContext.chapterId);
 
   const waveStartGold = toFiniteNumber(sourceCandidate.waveStartGold, NaN);
   if (Number.isFinite(waveStartGold)) {
@@ -390,10 +409,10 @@ function applyCandidateToChapterContext(chapterContext, candidate) {
   }
 
   const goblinHpScale = toFiniteNumber(sourceCandidate.goblinHpScale, NaN);
-  scaleEnemyHp(enemyCatalog, 'goblin', goblinHpScale);
+  scaleEnemyHp(enemyCatalog, chapterTuningEnemyIds.primary, goblinHpScale);
 
   const goblinEliteHpScale = toFiniteNumber(sourceCandidate.goblinEliteHpScale, NaN);
-  scaleEnemyHp(enemyCatalog, 'goblin_elite', goblinEliteHpScale);
+  scaleEnemyHp(enemyCatalog, chapterTuningEnemyIds.elite, goblinEliteHpScale);
 
   return clonedContext;
 }

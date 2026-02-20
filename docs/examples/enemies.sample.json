@@ -1,9 +1,10 @@
 {
-  "version": "0.1.0",
+  "version": "0.2.0",
   "enemies": [
     {
       "id": "goblin",
-      "name": "고블린",
+      "chapterId": "chapter_1",
+      "name": "Goblin",
       "stats": {
         "hp": 60,
         "moveSpeed": 1.0,
@@ -18,7 +19,8 @@
     },
     {
       "id": "goblin_elite",
-      "name": "고블린 정예",
+      "chapterId": "chapter_1",
+      "name": "Goblin Elite",
       "stats": {
         "hp": 140,
         "moveSpeed": 1.05,
@@ -33,7 +35,8 @@
     },
     {
       "id": "slime",
-      "name": "슬라임",
+      "chapterId": "chapter_1",
+      "name": "Slime",
       "stats": {
         "hp": 80,
         "moveSpeed": 0.9,
@@ -48,7 +51,8 @@
     },
     {
       "id": "boar_boss",
-      "name": "철갑 멧돼지",
+      "chapterId": "chapter_1",
+      "name": "Armored Boar",
       "stats": {
         "hp": 1200,
         "moveSpeed": 1.1,
@@ -59,6 +63,91 @@
       "rewardGold": 5.0,
       "tags": [
         "type:boss"
+      ]
+    },
+    {
+      "id": "raider_goblin",
+      "chapterId": "chapter_2",
+      "name": "Raider Goblin",
+      "stats": {
+        "hp": 92,
+        "moveSpeed": 1.08,
+        "armor": 3,
+        "resist": 0
+      },
+      "leakDamage": 1,
+      "rewardGold": 0.55,
+      "tags": [
+        "type:grunt",
+        "chapter:2"
+      ]
+    },
+    {
+      "id": "orc_brute",
+      "chapterId": "chapter_2",
+      "name": "Orc Brute",
+      "stats": {
+        "hp": 180,
+        "moveSpeed": 0.92,
+        "armor": 10,
+        "resist": 4
+      },
+      "leakDamage": 2,
+      "rewardGold": 1.0,
+      "tags": [
+        "type:elite",
+        "chapter:2"
+      ]
+    },
+    {
+      "id": "hex_shaman",
+      "chapterId": "chapter_2",
+      "name": "Hex Shaman",
+      "stats": {
+        "hp": 140,
+        "moveSpeed": 0.95,
+        "armor": 2,
+        "resist": 15
+      },
+      "leakDamage": 2,
+      "rewardGold": 0.9,
+      "tags": [
+        "type:caster",
+        "chapter:2"
+      ]
+    },
+    {
+      "id": "stone_turtle",
+      "chapterId": "chapter_2",
+      "name": "Stone Turtle",
+      "stats": {
+        "hp": 340,
+        "moveSpeed": 0.58,
+        "armor": 24,
+        "resist": 18
+      },
+      "leakDamage": 3,
+      "rewardGold": 1.4,
+      "tags": [
+        "type:tank",
+        "chapter:2"
+      ]
+    },
+    {
+      "id": "warlord_karg",
+      "chapterId": "chapter_2",
+      "name": "Warlord Karg",
+      "stats": {
+        "hp": 2200,
+        "moveSpeed": 0.9,
+        "armor": 28,
+        "resist": 16
+      },
+      "leakDamage": 4,
+      "rewardGold": 7.5,
+      "tags": [
+        "type:boss",
+        "chapter:2"
       ]
     }
   ]

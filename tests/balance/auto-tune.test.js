@@ -67,6 +67,26 @@ test('applyCandidateToChapterContext updates only target economy/enemy fields on
   assert.deepEqual(tunedContext.simulation.units, baseContext.simulation.units);
 });
 
+test('applyCandidateToChapterContext scales chapter_2 enemy targets', () => {
+  const baseContext = buildBalanceChapterContext({
+    chapterId: 'chapter_2',
+    waveMax: 6,
+    runSeed: 77,
+  });
+  const baseSnapshot = JSON.parse(JSON.stringify(baseContext));
+
+  const tunedContext = applyCandidateToChapterContext(baseContext, {
+    goblinHpScale: 1.5,
+    goblinEliteHpScale: 0.5,
+  });
+
+  assert.notStrictEqual(tunedContext, baseContext);
+  assert.deepEqual(baseContext, baseSnapshot);
+  assert.equal(tunedContext.simulation.enemyCatalog.raider_goblin.hp, 36);
+  assert.equal(tunedContext.simulation.enemyCatalog.orc_brute.hp, 29);
+  assert.equal(tunedContext.simulation.enemyCatalog.hex_shaman.hp, 44);
+});
+
 test('runAutoTune ranks candidates and selects best candidate with injected stubs', () => {
   const seenSeedBatches = [];
   const fixedSeeds = [13, 31, 49];

@@ -1,7 +1,8 @@
 {
-  "version": "0.1.0",
+  "version": "0.2.0",
   "waves": [
     {
+      "chapterId": "chapter_1",
       "waveNumber": 1,
       "prepareTime": 12,
       "spawns": [
@@ -18,6 +19,7 @@
       }
     },
     {
+      "chapterId": "chapter_1",
       "waveNumber": 2,
       "prepareTime": 12,
       "spawns": [
@@ -34,6 +36,7 @@
       }
     },
     {
+      "chapterId": "chapter_1",
       "waveNumber": 3,
       "prepareTime": 12,
       "spawns": [
@@ -50,6 +53,7 @@
       }
     },
     {
+      "chapterId": "chapter_1",
       "waveNumber": 4,
       "prepareTime": 12,
       "spawns": [
@@ -72,6 +76,7 @@
       }
     },
     {
+      "chapterId": "chapter_1",
       "waveNumber": 5,
       "isBoss": true,
       "prepareTime": 15,
@@ -81,6 +86,480 @@
           "enemyId": "boar_boss",
           "count": 1,
           "interval": 0
+        }
+      ],
+      "reward": {
+        "type": "BossChest",
+        "amount": 1
+      }
+    },
+    {
+      "chapterId": "chapter_2",
+      "waveNumber": 1,
+      "prepareTime": 12,
+      "spawns": [
+        {
+          "time": 0,
+          "enemyId": "raider_goblin",
+          "count": 6,
+          "interval": 0.65
+        }
+      ],
+      "reward": {
+        "type": "Gold",
+        "amount": 5
+      }
+    },
+    {
+      "chapterId": "chapter_2",
+      "waveNumber": 2,
+      "prepareTime": 12,
+      "spawns": [
+        {
+          "time": 0,
+          "enemyId": "raider_goblin",
+          "count": 8,
+          "interval": 0.62
+        }
+      ],
+      "reward": {
+        "type": "Gold",
+        "amount": 5
+      }
+    },
+    {
+      "chapterId": "chapter_2",
+      "waveNumber": 3,
+      "prepareTime": 12,
+      "spawns": [
+        {
+          "time": 0,
+          "enemyId": "raider_goblin",
+          "count": 10,
+          "interval": 0.58
+        }
+      ],
+      "reward": {
+        "type": "Gold",
+        "amount": 6
+      }
+    },
+    {
+      "chapterId": "chapter_2",
+      "waveNumber": 4,
+      "prepareTime": 12,
+      "spawns": [
+        {
+          "time": 0,
+          "enemyId": "raider_goblin",
+          "count": 8,
+          "interval": 0.58
+        },
+        {
+          "time": 1.4,
+          "enemyId": "hex_shaman",
+          "count": 2,
+          "interval": 1.0
+        }
+      ],
+      "reward": {
+        "type": "Gold",
+        "amount": 6
+      }
+    },
+    {
+      "chapterId": "chapter_2",
+      "waveNumber": 5,
+      "prepareTime": 11,
+      "spawns": [
+        {
+          "time": 0,
+          "enemyId": "raider_goblin",
+          "count": 10,
+          "interval": 0.55
+        },
+        {
+          "time": 1.8,
+          "enemyId": "orc_brute",
+          "count": 2,
+          "interval": 1.1
+        }
+      ],
+      "reward": {
+        "type": "RelicChoice",
+        "choices": 3
+      }
+    },
+    {
+      "chapterId": "chapter_2",
+      "waveNumber": 6,
+      "prepareTime": 11,
+      "spawns": [
+        {
+          "time": 0,
+          "enemyId": "raider_goblin",
+          "count": 8,
+          "interval": 0.52
+        },
+        {
+          "time": 1.2,
+          "enemyId": "orc_brute",
+          "count": 3,
+          "interval": 0.95
+        }
+      ],
+      "reward": {
+        "type": "Gold",
+        "amount": 7
+      }
+    },
+    {
+      "chapterId": "chapter_2",
+      "waveNumber": 7,
+      "prepareTime": 11,
+      "spawns": [
+        {
+          "time": 0,
+          "enemyId": "raider_goblin",
+          "count": 6,
+          "interval": 0.5
+        },
+        {
+          "time": 1.1,
+          "enemyId": "orc_brute",
+          "count": 4,
+          "interval": 0.9
+        },
+        {
+          "time": 2.2,
+          "enemyId": "hex_shaman",
+          "count": 2,
+          "interval": 1.2
+        }
+      ],
+      "reward": {
+        "type": "Gold",
+        "amount": 7
+      }
+    },
+    {
+      "chapterId": "chapter_2",
+      "waveNumber": 8,
+      "prepareTime": 11,
+      "spawns": [
+        {
+          "time": 0,
+          "enemyId": "orc_brute",
+          "count": 4,
+          "interval": 0.9
+        },
+        {
+          "time": 1.3,
+          "enemyId": "hex_shaman",
+          "count": 4,
+          "interval": 0.95
+        }
+      ],
+      "reward": {
+        "type": "Gold",
+        "amount": 8
+      }
+    },
+    {
+      "chapterId": "chapter_2",
+      "waveNumber": 9,
+      "prepareTime": 11,
+      "spawns": [
+        {
+          "time": 0,
+          "enemyId": "raider_goblin",
+          "count": 8,
+          "interval": 0.5
+        },
+        {
+          "time": 1.6,
+          "enemyId": "orc_brute",
+          "count": 4,
+          "interval": 0.9
+        },
+        {
+          "time": 3.0,
+          "enemyId": "stone_turtle",
+          "count": 1,
+          "interval": 0
+        }
+      ],
+      "reward": {
+        "type": "Gold",
+        "amount": 8
+      }
+    },
+    {
+      "chapterId": "chapter_2",
+      "waveNumber": 10,
+      "isBoss": true,
+      "prepareTime": 13,
+      "spawns": [
+        {
+          "time": 0,
+          "enemyId": "stone_turtle",
+          "count": 1,
+          "interval": 0
+        },
+        {
+          "time": 1.5,
+          "enemyId": "orc_brute",
+          "count": 2,
+          "interval": 1.2
+        }
+      ],
+      "reward": {
+        "type": "BossChest",
+        "amount": 1
+      }
+    },
+    {
+      "chapterId": "chapter_2",
+      "waveNumber": 11,
+      "prepareTime": 10,
+      "spawns": [
+        {
+          "time": 0,
+          "enemyId": "raider_goblin",
+          "count": 10,
+          "interval": 0.48
+        },
+        {
+          "time": 1.5,
+          "enemyId": "hex_shaman",
+          "count": 5,
+          "interval": 0.9
+        }
+      ],
+      "reward": {
+        "type": "Gold",
+        "amount": 9
+      }
+    },
+    {
+      "chapterId": "chapter_2",
+      "waveNumber": 12,
+      "prepareTime": 10,
+      "spawns": [
+        {
+          "time": 0,
+          "enemyId": "orc_brute",
+          "count": 5,
+          "interval": 0.85
+        },
+        {
+          "time": 1.6,
+          "enemyId": "hex_shaman",
+          "count": 5,
+          "interval": 0.85
+        }
+      ],
+      "reward": {
+        "type": "Gold",
+        "amount": 9
+      }
+    },
+    {
+      "chapterId": "chapter_2",
+      "waveNumber": 13,
+      "prepareTime": 10,
+      "spawns": [
+        {
+          "time": 0,
+          "enemyId": "raider_goblin",
+          "count": 12,
+          "interval": 0.46
+        },
+        {
+          "time": 1.7,
+          "enemyId": "orc_brute",
+          "count": 5,
+          "interval": 0.8
+        }
+      ],
+      "reward": {
+        "type": "Gold",
+        "amount": 10
+      }
+    },
+    {
+      "chapterId": "chapter_2",
+      "waveNumber": 14,
+      "prepareTime": 10,
+      "spawns": [
+        {
+          "time": 0,
+          "enemyId": "stone_turtle",
+          "count": 2,
+          "interval": 1.5
+        },
+        {
+          "time": 1.2,
+          "enemyId": "hex_shaman",
+          "count": 4,
+          "interval": 0.85
+        },
+        {
+          "time": 2.8,
+          "enemyId": "raider_goblin",
+          "count": 6,
+          "interval": 0.45
+        }
+      ],
+      "reward": {
+        "type": "Gold",
+        "amount": 10
+      }
+    },
+    {
+      "chapterId": "chapter_2",
+      "waveNumber": 15,
+      "prepareTime": 10,
+      "spawns": [
+        {
+          "time": 0,
+          "enemyId": "orc_brute",
+          "count": 6,
+          "interval": 0.8
+        },
+        {
+          "time": 1.4,
+          "enemyId": "hex_shaman",
+          "count": 6,
+          "interval": 0.82
+        }
+      ],
+      "reward": {
+        "type": "RelicChoice",
+        "choices": 3
+      }
+    },
+    {
+      "chapterId": "chapter_2",
+      "waveNumber": 16,
+      "prepareTime": 10,
+      "spawns": [
+        {
+          "time": 0,
+          "enemyId": "raider_goblin",
+          "count": 10,
+          "interval": 0.43
+        },
+        {
+          "time": 1.2,
+          "enemyId": "stone_turtle",
+          "count": 2,
+          "interval": 1.4
+        },
+        {
+          "time": 3.1,
+          "enemyId": "hex_shaman",
+          "count": 5,
+          "interval": 0.8
+        }
+      ],
+      "reward": {
+        "type": "Gold",
+        "amount": 11
+      }
+    },
+    {
+      "chapterId": "chapter_2",
+      "waveNumber": 17,
+      "prepareTime": 10,
+      "spawns": [
+        {
+          "time": 0,
+          "enemyId": "orc_brute",
+          "count": 8,
+          "interval": 0.72
+        },
+        {
+          "time": 1.8,
+          "enemyId": "hex_shaman",
+          "count": 6,
+          "interval": 0.78
+        }
+      ],
+      "reward": {
+        "type": "Gold",
+        "amount": 11
+      }
+    },
+    {
+      "chapterId": "chapter_2",
+      "waveNumber": 18,
+      "prepareTime": 10,
+      "spawns": [
+        {
+          "time": 0,
+          "enemyId": "stone_turtle",
+          "count": 3,
+          "interval": 1.3
+        },
+        {
+          "time": 1.6,
+          "enemyId": "orc_brute",
+          "count": 6,
+          "interval": 0.76
+        }
+      ],
+      "reward": {
+        "type": "Gold",
+        "amount": 12
+      }
+    },
+    {
+      "chapterId": "chapter_2",
+      "waveNumber": 19,
+      "prepareTime": 9,
+      "spawns": [
+        {
+          "time": 0,
+          "enemyId": "raider_goblin",
+          "count": 12,
+          "interval": 0.42
+        },
+        {
+          "time": 1.4,
+          "enemyId": "orc_brute",
+          "count": 8,
+          "interval": 0.72
+        },
+        {
+          "time": 3.0,
+          "enemyId": "hex_shaman",
+          "count": 6,
+          "interval": 0.75
+        }
+      ],
+      "reward": {
+        "type": "Gold",
+        "amount": 12
+      }
+    },
+    {
+      "chapterId": "chapter_2",
+      "waveNumber": 20,
+      "isBoss": true,
+      "prepareTime": 14,
+      "spawns": [
+        {
+          "time": 0,
+          "enemyId": "warlord_karg",
+          "count": 1,
+          "interval": 0
+        },
+        {
+          "time": 2.4,
+          "enemyId": "orc_brute",
+          "count": 4,
+          "interval": 0.8
         }
       ],
       "reward": {

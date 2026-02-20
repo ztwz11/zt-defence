@@ -1,5 +1,5 @@
 {
-  "version": "0.1.0",
+  "version": "0.2.0",
   "runEconomy": {
     "summonCost": 3,
     "rerollCost": 2,
@@ -34,5 +34,85 @@
         }
       }
     ]
+  },
+  "chapters": {
+    "chapter_1": {
+      "summonCost": 3,
+      "rerollCost": 2,
+      "gold": {
+        "waveStart": 3,
+        "waveClear": 5,
+        "perKill": 0.5
+      },
+      "tierChancesByWave": [
+        {
+          "waveFrom": 1,
+          "chances": {
+            "T1": 0.85,
+            "T2": 0.15,
+            "T3": 0.0
+          }
+        },
+        {
+          "waveFrom": 6,
+          "chances": {
+            "T1": 0.7,
+            "T2": 0.25,
+            "T3": 0.05
+          }
+        },
+        {
+          "waveFrom": 13,
+          "chances": {
+            "T1": 0.55,
+            "T2": 0.35,
+            "T3": 0.1
+          }
+        }
+      ]
+    },
+    "chapter_2": {
+      "summonCost": 4,
+      "rerollCost": 3,
+      "gold": {
+        "waveStart": 2,
+        "waveClear": 4,
+        "perKill": 0.45
+      },
+      "tierChancesByWave": [
+        {
+          "waveFrom": 1,
+          "chances": {
+            "T1": 0.9,
+            "T2": 0.1,
+            "T3": 0.0
+          }
+        },
+        {
+          "waveFrom": 6,
+          "chances": {
+            "T1": 0.72,
+            "T2": 0.24,
+            "T3": 0.04
+          }
+        },
+        {
+          "waveFrom": 12,
+          "chances": {
+            "T1": 0.58,
+            "T2": 0.3,
+            "T3": 0.12
+          }
+        },
+        {
+          "waveFrom": 16,
+          "chances": {
+            "T1": 0.45,
+            "T2": 0.37,
+            "T3": 0.18
+          }
+        }
+      ]
+    }
   }
 }

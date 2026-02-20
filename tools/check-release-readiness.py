@@ -33,11 +33,22 @@ CHECKS = [
         ],
     ),
     (
-        "balance tuning gate checks",
+        "balance tuning gate checks (chapter_1)",
         [
             "node",
             "tools/balance/run-tuning-gate.js",
-            "--output=.tmp/release-readiness/tuning-gate-report.json",
+            "--chapter=chapter_1",
+            "--output=.tmp/release-readiness/tuning-gate-report.chapter_1.json",
+            "--top-candidates=10",
+        ],
+    ),
+    (
+        "balance tuning gate checks (chapter_2)",
+        [
+            "node",
+            "tools/balance/run-tuning-gate.js",
+            "--chapter=chapter_2",
+            "--output=.tmp/release-readiness/tuning-gate-report.chapter_2.json",
             "--top-candidates=10",
         ],
     ),
