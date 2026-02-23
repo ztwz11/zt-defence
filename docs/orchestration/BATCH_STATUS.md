@@ -161,26 +161,35 @@
 | AN chapter_3 preset/content onboarding | codex-main | Completed | `content/chapter-presets.json`, `docs/examples/chapter_presets.sample.json`, `tests/balance/chapter-presets.test.js` | schema validation + chapter_3 context tests pass |
 | AO chapter_3 tuning profile + enemy scaling binding | codex-main | Completed | `tools/balance/tuning-gate-config.json`, `tools/balance/auto-tune.js`, `tests/balance/tuning-gate.test.js`, `tests/balance/auto-tune.test.js` | chapter_3 tuning gate pass (`score=2.423182`) |
 
+## Batch 20 Completion (dynamic chapter discovery for release-readiness + CI baseline)
+
+| Module | Owner | Status | Owned Paths | Checks |
+| --- | --- | --- | --- | --- |
+| AP release-readiness dynamic chapter check plan | codex-main | Completed | `tools/check-release-readiness.py` | chapter IDs auto-discovered from `content/chapter-presets.json` and tuning gates generated per chapter |
+| AQ PR baseline dynamic chapter artifact generation | codex-main | Completed | `.github/workflows/release-readiness.yml` | baseline worktree tuning reports generated via chapter loop instead of fixed chapter_1/2 |
+
 ## Current Gate Snapshot
 
 1. `node tools/perf/run-and-check.js --profile=ci-mobile-baseline --iterations=200 --output=.tmp/release-readiness/perf-gate-report.json` -> `PASS`
 2. `node tools/balance/run-tuning-gate.js --chapter=chapter_1 --output=.tmp/release-readiness/tuning-gate-report.chapter_1.json --top-candidates=10` -> `PASS` (`score=0.274286`)
 3. `node tools/balance/run-tuning-gate.js --chapter=chapter_2 --output=.tmp/release-readiness/tuning-gate-report.chapter_2.json --top-candidates=10` -> `PASS` (`score=0.658333`)
-4. `node tools/release-readiness/check-trend-diff.js --current-dir=.tmp/release-readiness --baseline-dir=.tmp/release-readiness/baseline --allow-missing-baseline --output=.tmp/release-readiness/trend-diff-report.json` -> `PASS` (baseline missing이면 skip)
-5. `python tools/check-release-readiness.py` -> `PASS`
-6. local gate artifacts generated:
+4. `node tools/balance/run-tuning-gate.js --chapter=chapter_3 --output=.tmp/release-readiness/tuning-gate-report.chapter_3.json --top-candidates=10` -> `PASS` (`score=2.423182`)
+5. `node tools/release-readiness/check-trend-diff.js --current-dir=.tmp/release-readiness --baseline-dir=.tmp/release-readiness/baseline --allow-missing-baseline --output=.tmp/release-readiness/trend-diff-report.json` -> `PASS` (baseline missing이면 skip)
+6. `python tools/check-release-readiness.py` -> `PASS` (chapter discovery: `chapter_1`, `chapter_2`, `chapter_3`)
+7. local gate artifacts generated:
    - `.tmp/release-readiness/perf-gate-report.json`
    - `.tmp/release-readiness/tuning-gate-report.chapter_1.json`
    - `.tmp/release-readiness/tuning-gate-report.chapter_2.json`
+   - `.tmp/release-readiness/tuning-gate-report.chapter_3.json`
    - `.tmp/release-readiness/trend-diff-report.json`
 
 ## Remaining Blockers
 
-1. No blocking issue for Batch 11-19 release-gate scope.
-2. `check-release-readiness`/CI baseline 생성 경로는 chapter 리스트가 아직 고정(`chapter_1`, `chapter_2`)이라 chapter_3 artifact 자동 수집이 미적용 상태.
+1. No blocking issue for Batch 11-20 release-gate scope.
+2. Trend threshold defaults for newly added chapters currently rely on scaffold policy; chapter-specific regression sensitivity tuning may be needed after live CI history accumulates.
 
 ## Next Parallel Batch Plan
 
-1. Batch 20: release-readiness/workflow의 chapter 리스트를 content 자동 탐색으로 전환.
-2. Batch 21: chapter_3을 포함한 PR baseline artifact diff 경로를 CI에서 검증하도록 확장.
+1. Batch 21: chapter_3 포함 PR baseline artifact diff 경로를 실제 PR CI 실행에서 검증하고 threshold drift를 보정.
+2. Batch 22: trend threshold chapter profile 자동 생성물(`effectiveThresholds`)을 기반으로 운영용 기준값 동기화 도구 추가.
 
