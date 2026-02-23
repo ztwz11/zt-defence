@@ -6,6 +6,7 @@ const assert = require('node:assert/strict');
 const {
   DEFAULT_REPORT_PATH,
   DEFAULT_THRESHOLDS_PATH,
+  buildSyncSummaryPayload,
   parseArgs,
   syncTrendThresholds,
 } = require('../../tools/release-readiness/sync-trend-thresholds');
@@ -15,6 +16,7 @@ test('parseArgs supports sync options', () => {
     '--report=.tmp/release-readiness/custom-report.json',
     '--thresholds=tools/release-readiness/custom-thresholds.json',
     '--output=artifacts/synced-thresholds.json',
+    '--summary-output=artifacts/sync-summary.json',
     '--write',
     '--all-chapters',
     '--lock-baseline',
@@ -25,9 +27,47 @@ test('parseArgs supports sync options', () => {
     reportPath: '.tmp/release-readiness/custom-report.json',
     thresholdsPath: 'tools/release-readiness/custom-thresholds.json',
     outputPath: 'artifacts/synced-thresholds.json',
+    summaryOutputPath: 'artifacts/sync-summary.json',
     write: true,
     allChapters: true,
     lockBaseline: true,
+  });
+});
+
+test('buildSyncSummaryPayload returns serializable sync metadata only', () => {
+  const summary = buildSyncSummaryPayload({
+    generatedAt: '2026-02-23T00:00:00.000Z',
+    reportPath: 'C:/repo/.tmp/release-readiness/trend-diff-report.json',
+    thresholdsPath: 'C:/repo/tools/release-readiness/trend-thresholds.json',
+    outputPath: 'C:/repo/.tmp/release-readiness/trend-thresholds.synced.json',
+    allChapters: true,
+    lockBaseline: true,
+    sourceChapterIds: ['chapter_1'],
+    chapterIdsToSync: ['chapter_1'],
+    addedChapterIds: [],
+    updatedChapterIds: ['chapter_1'],
+    unchangedChapterIds: [],
+    syncedChapterCount: 1,
+    writtenThresholdsPath: null,
+    writtenOutputPath: 'C:/repo/.tmp/release-readiness/trend-thresholds.synced.json',
+    thresholds: { should: 'not-included' },
+  });
+
+  assert.deepEqual(summary, {
+    generatedAt: '2026-02-23T00:00:00.000Z',
+    reportPath: 'C:/repo/.tmp/release-readiness/trend-diff-report.json',
+    thresholdsPath: 'C:/repo/tools/release-readiness/trend-thresholds.json',
+    outputPath: 'C:/repo/.tmp/release-readiness/trend-thresholds.synced.json',
+    allChapters: true,
+    lockBaseline: true,
+    sourceChapterIds: ['chapter_1'],
+    chapterIdsToSync: ['chapter_1'],
+    addedChapterIds: [],
+    updatedChapterIds: ['chapter_1'],
+    unchangedChapterIds: [],
+    syncedChapterCount: 1,
+    writtenThresholdsPath: null,
+    writtenOutputPath: 'C:/repo/.tmp/release-readiness/trend-thresholds.synced.json',
   });
 });
 
@@ -119,6 +159,7 @@ test('syncTrendThresholds syncs scaffolded chapter profiles and supports write/o
       reportPath,
       thresholdsPath,
       outputPath,
+      summaryOutputPath: null,
       write: true,
       allChapters: false,
       lockBaseline: true,
@@ -235,6 +276,7 @@ test('syncTrendThresholds supports no-op when scaffolded chapter list is empty',
       reportPath: DEFAULT_REPORT_PATH,
       thresholdsPath: DEFAULT_THRESHOLDS_PATH,
       outputPath: null,
+      summaryOutputPath: null,
       write: false,
       allChapters: false,
       lockBaseline: false,

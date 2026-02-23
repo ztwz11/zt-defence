@@ -189,6 +189,13 @@
 | AV drift threshold rebalance CLI | codex-main | Completed | `tools/release-readiness/rebalance-trend-thresholds.js`, `tests/perf/rebalance-trend-thresholds.test.js` | score regression relax + stable drift tighten + status degrade manual-review tests pass |
 | AW release-readiness rebalance artifact wiring | codex-main | Completed | `tools/check-release-readiness.py` | `.tmp/release-readiness/trend-threshold-recommendation.json` 자동 생성 |
 
+## Batch 24 Completion (sync/rebalance proposal workflow + PR comment bridge)
+
+| Module | Owner | Status | Owned Paths | Checks |
+| --- | --- | --- | --- | --- |
+| AX sync summary + preview artifact contract | codex-main | Completed | `tools/release-readiness/sync-trend-thresholds.js`, `tests/perf/sync-trend-thresholds.test.js`, `tools/check-release-readiness.py` | `--summary-output` 기반 sync summary/json preview 생성 |
+| AY proposal comment generator + CI PR upsert | codex-main | Completed | `tools/release-readiness/build-threshold-proposal-comment.js`, `tests/perf/build-threshold-proposal-comment.test.js`, `.github/workflows/release-readiness.yml`, `tools/check-release-readiness.py` | proposal markdown/json artifact 생성 + 내부 PR 코멘트 upsert 단계 연결 |
+
 ## Current Gate Snapshot
 
 1. `node tools/perf/run-and-check.js --profile=ci-mobile-baseline --iterations=200 --output=.tmp/release-readiness/perf-gate-report.json` -> `PASS`
@@ -197,23 +204,28 @@
 4. `node tools/balance/run-tuning-gate.js --chapter=chapter_3 --output=.tmp/release-readiness/tuning-gate-report.chapter_3.json --top-candidates=10` -> `PASS` (`score=2.423182`)
 5. `node tools/release-readiness/check-trend-diff.js --current-dir=.tmp/release-readiness --baseline-dir=.tmp/release-readiness/baseline --allow-missing-baseline --output=.tmp/release-readiness/trend-diff-report.json` -> `PASS` (baseline missing이면 skip)
 6. `python tools/check-release-readiness.py` -> `PASS` (chapter discovery: `chapter_1`, `chapter_2`, `chapter_3`)
-7. `node tools/release-readiness/sync-trend-thresholds.js --report=.tmp/release-readiness/trend-diff-report.json --thresholds=tools/release-readiness/trend-thresholds.json --write --lock-baseline` -> `PASS` (operational threshold sync command verified)
+7. `node tools/release-readiness/sync-trend-thresholds.js --report=.tmp/release-readiness/trend-diff-report.json --thresholds=tools/release-readiness/trend-thresholds.json --all-chapters --lock-baseline --output=.tmp/release-readiness/trend-thresholds.synced.preview.json --summary-output=.tmp/release-readiness/trend-threshold-sync-summary.json` -> `PASS` (sync preview + summary generated)
 8. `node tools/release-readiness/rebalance-trend-thresholds.js --report=.tmp/release-readiness/trend-diff-report.json --thresholds=tools/release-readiness/trend-thresholds.json --output=.tmp/release-readiness/trend-threshold-recommendation.json` -> `PASS` (drift threshold recommendation generated)
-9. local gate artifacts generated:
+9. `node tools/release-readiness/build-threshold-proposal-comment.js --trend-report=.tmp/release-readiness/trend-diff-report.json --sync-summary=.tmp/release-readiness/trend-threshold-sync-summary.json --rebalance-report=.tmp/release-readiness/trend-threshold-recommendation.json --output=.tmp/release-readiness/trend-threshold-proposal-comment.md --output-json=.tmp/release-readiness/trend-threshold-proposal.json` -> `PASS` (PR 코멘트용 proposal artifact generated)
+10. local gate artifacts generated:
    - `.tmp/release-readiness/perf-gate-report.json`
    - `.tmp/release-readiness/tuning-gate-report.chapter_1.json`
    - `.tmp/release-readiness/tuning-gate-report.chapter_2.json`
    - `.tmp/release-readiness/tuning-gate-report.chapter_3.json`
    - `.tmp/release-readiness/trend-diff-report.json`
+   - `.tmp/release-readiness/trend-thresholds.synced.preview.json`
+   - `.tmp/release-readiness/trend-threshold-sync-summary.json`
    - `.tmp/release-readiness/trend-threshold-recommendation.json`
+   - `.tmp/release-readiness/trend-threshold-proposal-comment.md`
+   - `.tmp/release-readiness/trend-threshold-proposal.json`
 
 ## Remaining Blockers
 
-1. No blocking issue for Batch 11-23 release-gate scope.
-2. rebalance 결과를 PR 코멘트로 노출하고 threshold 변경 제안을 리뷰 루프에 연결하는 자동화가 아직 없음.
+1. No blocking issue for Batch 11-24 release-gate scope.
+2. threshold 변경 제안의 승인/적용을 자동 가드로 연결하는 apply 단계(수동 승인/머지 규칙)가 아직 없음.
 
 ## Next Parallel Batch Plan
 
-1. Batch 24: sync/rebalance 결과를 CI artifact + PR 코멘트에 연결하는 threshold 변경 제안 워크플로우 자동화.
-2. Batch 25: 제안된 threshold 변경사항의 승인/적용(수동 승인 후 반영) 파이프라인 확장.
+1. Batch 25: 제안된 threshold 변경사항의 승인/적용(수동 승인 후 반영) 파이프라인 확장.
+2. Batch 26: PR 누적 trend 데이터 기반 chapter별 adaptive policy(변동성 기반 margin/rate) 고도화.
 

@@ -21,6 +21,7 @@ function parseArgs(argv) {
     reportPath: DEFAULT_REPORT_PATH,
     thresholdsPath: DEFAULT_THRESHOLDS_PATH,
     outputPath: null,
+    summaryOutputPath: null,
     write: false,
     allChapters: false,
     lockBaseline: false,
@@ -67,6 +68,17 @@ function parseArgs(argv) {
       continue;
     }
 
+    if (token.startsWith('--summary-output=')) {
+      parsed.summaryOutputPath = token.slice('--summary-output='.length).trim();
+      continue;
+    }
+
+    if (token === '--summary-output') {
+      parsed.summaryOutputPath = String(args[index + 1] || '').trim();
+      index += 1;
+      continue;
+    }
+
     if (token === '--write') {
       parsed.write = true;
       continue;
@@ -97,6 +109,10 @@ function parseArgs(argv) {
     throw new Error('Invalid --output value. Expected a non-empty path.');
   }
 
+  if (parsed.summaryOutputPath !== null && parsed.summaryOutputPath.length === 0) {
+    throw new Error('Invalid --summary-output value. Expected a non-empty path.');
+  }
+
   return parsed;
 }
 
@@ -108,6 +124,7 @@ function printHelp() {
     `  --report=<path>      Trend diff report path (default: ${DEFAULT_REPORT_PATH})`,
     `  --thresholds=<path>  Target thresholds path (default: ${DEFAULT_THRESHOLDS_PATH})`,
     '  --output=<path>      Optional output path for synced thresholds JSON',
+    '  --summary-output=<path> Optional output path for sync summary JSON',
     '  --write              Write synced thresholds back to --thresholds path',
     '  --all-chapters       Sync all chapters from effectiveThresholds (default: scaffolded only)',
     '  --lock-baseline      Set allowMissingBaseline=false for synced chapter profiles',
@@ -166,6 +183,28 @@ function writeJsonFile(filePath, payload, dependencies) {
 
   mkdirSync(dirname(filePath), { recursive: true });
   writeFileSync(filePath, `${JSON.stringify(payload, null, 2)}\n`);
+}
+
+function buildSyncSummaryPayload(result) {
+  const source = isPlainObject(result) ? result : {};
+  return {
+    generatedAt: source.generatedAt || null,
+    reportPath: source.reportPath || null,
+    thresholdsPath: source.thresholdsPath || null,
+    outputPath: source.outputPath || null,
+    allChapters: source.allChapters === true,
+    lockBaseline: source.lockBaseline === true,
+    sourceChapterIds: Array.isArray(source.sourceChapterIds) ? source.sourceChapterIds : [],
+    chapterIdsToSync: Array.isArray(source.chapterIdsToSync) ? source.chapterIdsToSync : [],
+    addedChapterIds: Array.isArray(source.addedChapterIds) ? source.addedChapterIds : [],
+    updatedChapterIds: Array.isArray(source.updatedChapterIds) ? source.updatedChapterIds : [],
+    unchangedChapterIds: Array.isArray(source.unchangedChapterIds) ? source.unchangedChapterIds : [],
+    syncedChapterCount: Number.isFinite(Number(source.syncedChapterCount))
+      ? Number(source.syncedChapterCount)
+      : 0,
+    writtenThresholdsPath: source.writtenThresholdsPath || null,
+    writtenOutputPath: source.writtenOutputPath || null,
+  };
 }
 
 function extractSyncInput(reportPayload) {
@@ -324,6 +363,13 @@ function main() {
 
   try {
     const result = syncTrendThresholds(parsedArgs);
+    let writtenSummaryPath = null;
+    if (parsedArgs.summaryOutputPath) {
+      const summaryPayload = buildSyncSummaryPayload(result);
+      writtenSummaryPath = resolvePathFromCwd(parsedArgs.summaryOutputPath, {});
+      writeJsonFile(writtenSummaryPath, summaryPayload, {});
+    }
+
     process.stdout.write(`${createSummaryLine(result)}\n`);
 
     if (result.writtenThresholdsPath) {
@@ -331,6 +377,9 @@ function main() {
     }
     if (result.writtenOutputPath) {
       process.stderr.write(`${SUMMARY_PREFIX} Wrote output to ${result.writtenOutputPath}\n`);
+    }
+    if (writtenSummaryPath) {
+      process.stderr.write(`${SUMMARY_PREFIX} Wrote summary to ${writtenSummaryPath}\n`);
     }
   } catch (error) {
     process.stderr.write(`${SUMMARY_PREFIX} Execution failed\n`);
@@ -350,6 +399,7 @@ module.exports = {
   parseArgs,
   extractSyncInput,
   resolveChapterIdsToSync,
+  buildSyncSummaryPayload,
   syncTrendThresholds,
   createSummaryLine,
 };

@@ -115,6 +115,22 @@ def build_checks(chapter_ids: list[str], allow_missing_baseline: bool) -> list[t
 
     checks.append(
         (
+            "trend threshold sync preview",
+            [
+                "node",
+                "tools/release-readiness/sync-trend-thresholds.js",
+                "--report=.tmp/release-readiness/trend-diff-report.json",
+                "--thresholds=tools/release-readiness/trend-thresholds.json",
+                "--all-chapters",
+                "--lock-baseline",
+                "--output=.tmp/release-readiness/trend-thresholds.synced.preview.json",
+                "--summary-output=.tmp/release-readiness/trend-threshold-sync-summary.json",
+            ],
+        )
+    )
+
+    checks.append(
+        (
             "trend threshold rebalance recommendation",
             [
                 "node",
@@ -122,6 +138,21 @@ def build_checks(chapter_ids: list[str], allow_missing_baseline: bool) -> list[t
                 "--report=.tmp/release-readiness/trend-diff-report.json",
                 "--thresholds=tools/release-readiness/trend-thresholds.json",
                 "--output=.tmp/release-readiness/trend-threshold-recommendation.json",
+            ],
+        )
+    )
+
+    checks.append(
+        (
+            "trend threshold proposal comment artifact",
+            [
+                "node",
+                "tools/release-readiness/build-threshold-proposal-comment.js",
+                "--trend-report=.tmp/release-readiness/trend-diff-report.json",
+                "--sync-summary=.tmp/release-readiness/trend-threshold-sync-summary.json",
+                "--rebalance-report=.tmp/release-readiness/trend-threshold-recommendation.json",
+                "--output=.tmp/release-readiness/trend-threshold-proposal-comment.md",
+                "--output-json=.tmp/release-readiness/trend-threshold-proposal.json",
             ],
         )
     )
