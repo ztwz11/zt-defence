@@ -29,6 +29,7 @@ PAIRS = [
     ("waves.schema.json", "waves.sample.json"),
     ("relics.schema.json", "relics.sample.json"),
     ("economy.schema.json", "economy.sample.json"),
+    ("chapter_presets.schema.json", "chapter_presets.sample.json"),
     ("profile.schema.json", "profile.sample.json"),
     ("run_save.schema.json", "run_save.sample.json"),
     ("run_history.schema.json", "run_history.sample.json"),
@@ -191,4 +192,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
-

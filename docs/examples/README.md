@@ -1,20 +1,21 @@
 # Examples
 
-이 폴더는 데이터-드리븐 구현을 위한 샘플 컨텐츠 JSON이다.
+This directory contains sample JSON payloads used by the data-driven game runtime.
 
-## 파일
-- `units.sample.json`: 유닛 4종 예시
-- `skills.sample.json`: 스킬 4종 예시
-- `synergies.sample.json`: 시너지 3종 예시
-- `enemies.sample.json`: `chapter_1` + `chapter_2` 적 샘플
-- `waves.sample.json`: `chapter_1` 웨이브 1~5, `chapter_2` 웨이브 1~20 샘플
-- `relics.sample.json`: 유물 5종 예시
-- `economy.sample.json`: 공통 `runEconomy` + 챕터별 경제 오버라이드(`chapters`)
-- `profile.sample.json`: 메타 프로필 저장 예시
-- `run_save.sample.json`: 진행 중 런 저장 예시
-- `run_history.sample.json`: 런 기록 저장 예시
+## Files
+- `units.sample.json`: unit definition samples
+- `skills.sample.json`: skill definition samples
+- `synergies.sample.json`: synergy threshold samples
+- `enemies.sample.json`: chapter-scoped enemy samples
+- `waves.sample.json`: chapter-scoped wave samples
+- `relics.sample.json`: relic samples
+- `economy.sample.json`: run economy + chapter overrides
+- `chapter_presets.sample.json`: balance chapter preset registry sample
+- `profile.sample.json`: meta profile save sample
+- `run_save.sample.json`: in-run save sample
+- `run_history.sample.json`: run history sample
 
-## 검증
-- 스키마/샘플 검증: `python tools/validate-schemas.py`
+## Validation
+- Validate schema/sample pairs: `python tools/validate-schemas.py`
 
-주의: 실제 구현에서는 파일 간 ID 참조 무결성 검증이 필요하다.
+Use additional integrity checks to validate cross-file references in production pipelines.

@@ -4,14 +4,75 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 
 const {
+  DEFAULT_CHAPTER_PRESETS_PATH,
+  CHAPTER_PRESET_REGISTRY,
   CHAPTER_PRESETS,
+  loadChapterPresetRegistry,
   resolveChapterPreset,
   buildBalanceChapterContext,
 } = require('../../tools/balance/chapter-presets');
 
+test('default chapter preset registry is loaded from content/chapter-presets.json', () => {
+  assert.match(
+    DEFAULT_CHAPTER_PRESETS_PATH.replaceAll('\\', '/'),
+    /\/content\/chapter-presets\.json$/
+  );
+  assert.equal(CHAPTER_PRESET_REGISTRY.defaultChapterId, 'chapter_1');
+  assert.equal(CHAPTER_PRESET_REGISTRY.sourcePath, DEFAULT_CHAPTER_PRESETS_PATH);
+});
+
 test('resolveChapterPreset selects known chapter and falls back to chapter_1', () => {
   assert.equal(resolveChapterPreset('chapter_2'), CHAPTER_PRESETS.chapter_2);
   assert.equal(resolveChapterPreset('unknown_chapter'), CHAPTER_PRESETS.chapter_1);
+});
+
+test('loadChapterPresetRegistry supports dependency injection for file reads', () => {
+  const registry = loadChapterPresetRegistry({
+    path: 'C:/virtual/content/chapter-presets.json',
+    readFileSync(filePath) {
+      assert.equal(filePath, 'C:/virtual/content/chapter-presets.json');
+      return JSON.stringify({
+        version: '9.9.9',
+        defaultChapterId: 'chapter_custom',
+        chapters: {
+          chapter_custom: {
+            gateHp: 30,
+            maxGateHp: 30,
+            gold: 7,
+            economyConfig: {
+              waveStartGold: 4,
+              waveClearBonusGold: 4,
+              interest: { enabled: false },
+              costs: {
+                summon: 3,
+                reroll: { base: 2, increasePerUse: 1 },
+              },
+            },
+            rewards: [{ type: 'Gold', amount: 1 }],
+            simulation: {
+              tickSeconds: 0.25,
+              durationSeconds: 8,
+              spawnEvents: [{ time: 0, enemyId: 'goblin', count: 1, interval: 0 }],
+              enemyCatalog: {
+                goblin: {
+                  hp: 20,
+                  armor: 0,
+                  resist: 0,
+                  moveSpeed: 0.2,
+                },
+              },
+              units: [],
+            },
+          },
+        },
+      });
+    },
+  });
+
+  assert.equal(registry.version, '9.9.9');
+  assert.equal(registry.defaultChapterId, 'chapter_custom');
+  assert.equal(registry.sourcePath, 'C:/virtual/content/chapter-presets.json');
+  assert.equal(registry.chapters.chapter_custom.gateHp, 30);
 });
 
 test('buildBalanceChapterContext uses chapter_2 preset values', () => {

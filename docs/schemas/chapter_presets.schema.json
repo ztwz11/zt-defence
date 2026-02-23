@@ -1,0 +1,217 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/schemas/chapter_presets.schema.json",
+  "title": "ChapterPresets",
+  "type": "object",
+  "required": [
+    "version",
+    "defaultChapterId",
+    "chapters"
+  ],
+  "properties": {
+    "version": {
+      "type": "string"
+    },
+    "defaultChapterId": {
+      "type": "string",
+      "pattern": "^chapter_[a-z0-9_]+$"
+    },
+    "chapters": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": [
+          "gateHp",
+          "maxGateHp",
+          "gold",
+          "economyConfig",
+          "rewards",
+          "simulation"
+        ],
+        "properties": {
+          "gateHp": {
+            "type": "number",
+            "minimum": 0
+          },
+          "maxGateHp": {
+            "type": "number",
+            "minimum": 0
+          },
+          "gold": {
+            "type": "number",
+            "minimum": 0
+          },
+          "economyConfig": {
+            "type": "object",
+            "required": [
+              "waveStartGold",
+              "waveClearBonusGold",
+              "costs"
+            ],
+            "properties": {
+              "waveStartGold": {
+                "type": "number",
+                "minimum": 0
+              },
+              "waveClearBonusGold": {
+                "type": "number",
+                "minimum": 0
+              },
+              "interest": {
+                "type": "object",
+                "properties": {
+                  "enabled": {
+                    "type": "boolean"
+                  }
+                },
+                "additionalProperties": false
+              },
+              "costs": {
+                "type": "object",
+                "required": [
+                  "summon",
+                  "reroll"
+                ],
+                "properties": {
+                  "summon": {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "reroll": {
+                    "type": "object",
+                    "required": [
+                      "base",
+                      "increasePerUse"
+                    ],
+                    "properties": {
+                      "base": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "increasePerUse": {
+                        "type": "number",
+                        "minimum": 0
+                      }
+                    },
+                    "additionalProperties": false
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "additionalProperties": false
+          },
+          "rewards": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "type"
+              ],
+              "properties": {
+                "type": {
+                  "type": "string"
+                },
+                "amount": {
+                  "type": "number",
+                  "minimum": 0
+                }
+              },
+              "additionalProperties": true
+            }
+          },
+          "simulation": {
+            "type": "object",
+            "required": [
+              "tickSeconds",
+              "durationSeconds",
+              "spawnEvents",
+              "enemyCatalog",
+              "units"
+            ],
+            "properties": {
+              "tickSeconds": {
+                "type": "number",
+                "minimum": 0
+              },
+              "durationSeconds": {
+                "type": "number",
+                "minimum": 0
+              },
+              "spawnEvents": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "time",
+                    "enemyId",
+                    "count",
+                    "interval"
+                  ],
+                  "properties": {
+                    "time": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "enemyId": {
+                      "type": "string",
+                      "minLength": 1,
+                      "pattern": "^[a-z][a-z0-9_\\-\\.]*$"
+                    },
+                    "count": {
+                      "type": "integer",
+                      "minimum": 1
+                    },
+                    "interval": {
+                      "type": "number",
+                      "minimum": 0
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              },
+              "enemyCatalog": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "object",
+                  "required": [
+                    "hp",
+                    "moveSpeed"
+                  ],
+                  "properties": {
+                    "hp": {
+                      "type": "number",
+                      "minimum": 1
+                    },
+                    "armor": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "resist": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "moveSpeed": {
+                      "type": "number",
+                      "minimum": 0
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              },
+              "units": {
+                "type": "array",
+                "items": {
+                  "type": "object"
+                }
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}
