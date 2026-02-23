@@ -1,0 +1,34 @@
+{
+  "version": "1.0.0",
+  "perf": {
+    "operations": {
+      "tickSimulation": {
+        "avgMsIncreaseMax": 0.2,
+        "p95MsIncreaseMax": 0.6,
+        "maxMsIncreaseMax": 2.5
+      },
+      "runWaveSlice": {
+        "avgMsIncreaseMax": 0.25,
+        "p95MsIncreaseMax": 0.7,
+        "maxMsIncreaseMax": 2.5
+      },
+      "runSessionShort": {
+        "avgMsIncreaseMax": 0.3,
+        "p95MsIncreaseMax": 0.8,
+        "maxMsIncreaseMax": 2.5
+      }
+    }
+  },
+  "tuning": {
+    "chapters": {
+      "chapter_1": {
+        "scoreIncreaseMax": 0.2,
+        "allowStatusDegrade": false
+      },
+      "chapter_2": {
+        "scoreIncreaseMax": 0.25,
+        "allowStatusDegrade": false
+      }
+    }
+  }
+}

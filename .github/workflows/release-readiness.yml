@@ -22,6 +22,20 @@ jobs:
         with:
           node-version: "22"
 
+      - name: Generate baseline gate artifacts (PR only)
+        if: github.event_name == 'pull_request'
+        run: |
+          set -euo pipefail
+          BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          mkdir -p .tmp/release-readiness/baseline
+          git worktree add --detach .tmp/release-readiness/base-worktree "${BASE_SHA}"
+          pushd .tmp/release-readiness/base-worktree >/dev/null
+          node tools/perf/run-and-check.js --profile=ci-mobile-baseline --iterations=200 --output=../baseline/perf-gate-report.json
+          node tools/balance/run-tuning-gate.js --chapter=chapter_1 --output=../baseline/tuning-gate-report.chapter_1.json --top-candidates=10
+          node tools/balance/run-tuning-gate.js --chapter=chapter_2 --output=../baseline/tuning-gate-report.chapter_2.json --top-candidates=10
+          popd >/dev/null
+          git worktree remove --force .tmp/release-readiness/base-worktree
+
       - name: Run full release-readiness checks
         run: python tools/check-release-readiness.py
 

@@ -132,24 +132,34 @@
 | AE chapter-scoped release-readiness gate | codex-main | Completed | `tools/check-release-readiness.py` | chapter_1 + chapter_2 tuning artifacts emitted |
 | AF chapter_2 content schema/examples | codex-main | Completed | `docs/schemas/enemies.schema.json`, `docs/schemas/waves.schema.json`, `docs/schemas/economy.schema.json`, `docs/examples/enemies.sample.json`, `docs/examples/waves.sample.json`, `docs/examples/economy.sample.json`, `docs/examples/README.md` | schema/sample validation pass |
 
+## Batch 16 Completion (artifact trend/diff checker)
+
+| Module | Owner | Status | Owned Paths | Checks |
+| --- | --- | --- | --- | --- |
+| AG trend/diff checker CLI + thresholds | codex-main | Completed | `tools/release-readiness/check-trend-diff.js`, `tools/release-readiness/trend-thresholds.json`, `tests/perf/trend-diff.test.js` | regression detection + skip path tests pass |
+| AH release-readiness trend gate wiring | codex-main | Completed | `tools/check-release-readiness.py` | trend report emitted (`trend-diff-report.json`) |
+| AI PR baseline artifact generation | codex-main | Completed | `.github/workflows/release-readiness.yml` | PR base commit artifacts generated via worktree and compared |
+
 ## Current Gate Snapshot
 
 1. `node tools/perf/run-and-check.js --profile=ci-mobile-baseline --iterations=200 --output=.tmp/release-readiness/perf-gate-report.json` -> `PASS`
 2. `node tools/balance/run-tuning-gate.js --chapter=chapter_1 --output=.tmp/release-readiness/tuning-gate-report.chapter_1.json --top-candidates=10` -> `PASS` (`score=0.274286`)
 3. `node tools/balance/run-tuning-gate.js --chapter=chapter_2 --output=.tmp/release-readiness/tuning-gate-report.chapter_2.json --top-candidates=10` -> `PASS` (`score=0.658333`)
-4. `python tools/check-release-readiness.py` -> `PASS`
-5. local gate artifacts generated:
+4. `node tools/release-readiness/check-trend-diff.js --current-dir=.tmp/release-readiness --baseline-dir=.tmp/release-readiness/baseline --allow-missing-baseline --output=.tmp/release-readiness/trend-diff-report.json` -> `PASS` (baseline missing이면 skip)
+5. `python tools/check-release-readiness.py` -> `PASS`
+6. local gate artifacts generated:
    - `.tmp/release-readiness/perf-gate-report.json`
    - `.tmp/release-readiness/tuning-gate-report.chapter_1.json`
    - `.tmp/release-readiness/tuning-gate-report.chapter_2.json`
+   - `.tmp/release-readiness/trend-diff-report.json`
 
 ## Remaining Blockers
 
-1. No blocking issue for Batch 11-15 release-gate scope.
+1. No blocking issue for Batch 11-16 release-gate scope.
 2. Next risk is chapter_3+ preset 확장 시 objective/threshold 재정렬 필요.
 
 ## Next Parallel Batch Plan
 
-1. Batch 16: add trend/diff checker for perf+tuning artifacts between commits.
-2. Batch 17: chapter preset registry를 `content` 기반 로더로 치환해 데이터-드리븐 튜닝 경로 완성.
+1. Batch 17: chapter preset registry를 `content` 기반 로더로 치환해 데이터-드리븐 튜닝 경로 완성.
+2. Batch 18: trend/diff gate의 chapter_3+ 확장 규칙(임계치 자동 스캐폴딩) 추가.
 

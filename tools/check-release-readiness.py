@@ -52,6 +52,17 @@ CHECKS = [
             "--top-candidates=10",
         ],
     ),
+    (
+        "release-readiness trend diff checks",
+        [
+            "node",
+            "tools/release-readiness/check-trend-diff.js",
+            "--current-dir=.tmp/release-readiness",
+            "--baseline-dir=.tmp/release-readiness/baseline",
+            "--allow-missing-baseline",
+            "--output=.tmp/release-readiness/trend-diff-report.json",
+        ],
+    ),
 ]
 
 
