@@ -168,6 +168,13 @@
 | AP release-readiness dynamic chapter check plan | codex-main | Completed | `tools/check-release-readiness.py` | chapter IDs auto-discovered from `content/chapter-presets.json` and tuning gates generated per chapter |
 | AQ PR baseline dynamic chapter artifact generation | codex-main | Completed | `.github/workflows/release-readiness.yml` | baseline worktree tuning reports generated via chapter loop instead of fixed chapter_1/2 |
 
+## Batch 21 Completion (PR baseline diff path enforcement in CI)
+
+| Module | Owner | Status | Owned Paths | Checks |
+| --- | --- | --- | --- | --- |
+| AR baseline-required release-readiness mode | codex-main | Completed | `tools/check-release-readiness.py` | `RELEASE_READINESS_REQUIRE_BASELINE=1`이면 trend-diff에서 baseline 누락을 skip하지 않고 실패 처리 |
+| AS PR workflow baseline enforcement wiring | codex-main | Completed | `.github/workflows/release-readiness.yml` | `pull_request` 이벤트에서 baseline-required 모드로 full checks 실행 |
+
 ## Current Gate Snapshot
 
 1. `node tools/perf/run-and-check.js --profile=ci-mobile-baseline --iterations=200 --output=.tmp/release-readiness/perf-gate-report.json` -> `PASS`
@@ -185,11 +192,11 @@
 
 ## Remaining Blockers
 
-1. No blocking issue for Batch 11-20 release-gate scope.
+1. No blocking issue for Batch 11-21 release-gate scope.
 2. Trend threshold defaults for newly added chapters currently rely on scaffold policy; chapter-specific regression sensitivity tuning may be needed after live CI history accumulates.
 
 ## Next Parallel Batch Plan
 
-1. Batch 21: chapter_3 포함 PR baseline artifact diff 경로를 실제 PR CI 실행에서 검증하고 threshold drift를 보정.
-2. Batch 22: trend threshold chapter profile 자동 생성물(`effectiveThresholds`)을 기반으로 운영용 기준값 동기화 도구 추가.
+1. Batch 22: trend threshold chapter profile 자동 생성물(`effectiveThresholds`)을 기반으로 운영용 기준값 동기화 도구 추가.
+2. Batch 23: baseline-required 모드의 PR CI 결과를 기반으로 chapter별 drift 보정 루프(임계치 재조정) 자동화.
 

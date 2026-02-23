@@ -12,6 +12,7 @@ Checks:
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -51,7 +52,19 @@ def load_chapter_ids(chapter_presets_path: Path) -> list[str]:
     return chapter_ids
 
 
-def build_checks(chapter_ids: list[str]) -> list[tuple[str, list[str]]]:
+def parse_bool_env(name: str, default: bool) -> bool:
+    raw = os.getenv(name)
+    if raw is None:
+        return default
+    normalized = raw.strip().lower()
+    if normalized in {"1", "true", "yes", "y", "on"}:
+        return True
+    if normalized in {"0", "false", "no", "n", "off"}:
+        return False
+    return default
+
+
+def build_checks(chapter_ids: list[str], allow_missing_baseline: bool) -> list[tuple[str, list[str]]]:
     checks: list[tuple[str, list[str]]] = [
         ("schema/sample validation", [sys.executable, "tools/validate-schemas.py"]),
         ("node test suite", ["node", "--test", "tests/**/*.test.js"]),
@@ -83,17 +96,20 @@ def build_checks(chapter_ids: list[str]) -> list[tuple[str, list[str]]]:
             )
         )
 
+    trend_diff_command = [
+        "node",
+        "tools/release-readiness/check-trend-diff.js",
+        "--current-dir=.tmp/release-readiness",
+        "--baseline-dir=.tmp/release-readiness/baseline",
+        "--output=.tmp/release-readiness/trend-diff-report.json",
+    ]
+    if allow_missing_baseline:
+        trend_diff_command.insert(-1, "--allow-missing-baseline")
+
     checks.append(
         (
             "release-readiness trend diff checks",
-            [
-                "node",
-                "tools/release-readiness/check-trend-diff.js",
-                "--current-dir=.tmp/release-readiness",
-                "--baseline-dir=.tmp/release-readiness/baseline",
-                "--allow-missing-baseline",
-                "--output=.tmp/release-readiness/trend-diff-report.json",
-            ],
+            trend_diff_command,
         )
     )
 
@@ -125,9 +141,12 @@ def main() -> int:
         print(f"[FAIL]  chapter discovery ({error})")
         return 1
 
-    checks = build_checks(chapter_ids)
+    require_baseline = parse_bool_env("RELEASE_READINESS_REQUIRE_BASELINE", False)
+    allow_missing_baseline = not require_baseline
+    checks = build_checks(chapter_ids, allow_missing_baseline)
     print("Running release-readiness checks...")
     print(f"Discovered chapters for tuning gates: {', '.join(chapter_ids)}")
+    print(f"Baseline required mode: {require_baseline}")
     for name, command in checks:
         code = run_check(name, command)
         if code != 0:

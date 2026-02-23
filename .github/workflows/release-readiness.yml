@@ -60,6 +60,8 @@ PY
           git worktree remove --force .tmp/release-readiness/base-worktree
 
       - name: Run full release-readiness checks
+        env:
+          RELEASE_READINESS_REQUIRE_BASELINE: ${{ github.event_name == 'pull_request' && '1' || '0' }}
         run: python tools/check-release-readiness.py
 
       - name: Upload release-readiness artifacts
