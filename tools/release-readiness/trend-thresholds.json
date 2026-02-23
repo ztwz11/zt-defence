@@ -43,6 +43,12 @@
         "allowStatusDegrade": false,
         "allowMissingBaseline": false,
         "allowMissingCurrent": false
+      },
+      "chapter_3": {
+        "scoreIncreaseMax": 0.3,
+        "allowStatusDegrade": false,
+        "allowMissingBaseline": false,
+        "allowMissingCurrent": false
       }
     }
   }

@@ -175,6 +175,13 @@
 | AR baseline-required release-readiness mode | codex-main | Completed | `tools/check-release-readiness.py` | `RELEASE_READINESS_REQUIRE_BASELINE=1`이면 trend-diff에서 baseline 누락을 skip하지 않고 실패 처리 |
 | AS PR workflow baseline enforcement wiring | codex-main | Completed | `.github/workflows/release-readiness.yml` | `pull_request` 이벤트에서 baseline-required 모드로 full checks 실행 |
 
+## Batch 22 Completion (effectiveThresholds to operational threshold sync tool)
+
+| Module | Owner | Status | Owned Paths | Checks |
+| --- | --- | --- | --- | --- |
+| AT threshold sync CLI from trend report | codex-main | Completed | `tools/release-readiness/sync-trend-thresholds.js`, `tests/perf/sync-trend-thresholds.test.js` | parse/sync/dry-run tests pass |
+| AU chapter_3 operational threshold onboarding | codex-main | Completed | `tools/release-readiness/trend-thresholds.json` | sync CLI 실행으로 `chapter_3` profile 반영 (`allowMissingBaseline=false`) |
+
 ## Current Gate Snapshot
 
 1. `node tools/perf/run-and-check.js --profile=ci-mobile-baseline --iterations=200 --output=.tmp/release-readiness/perf-gate-report.json` -> `PASS`
@@ -183,7 +190,8 @@
 4. `node tools/balance/run-tuning-gate.js --chapter=chapter_3 --output=.tmp/release-readiness/tuning-gate-report.chapter_3.json --top-candidates=10` -> `PASS` (`score=2.423182`)
 5. `node tools/release-readiness/check-trend-diff.js --current-dir=.tmp/release-readiness --baseline-dir=.tmp/release-readiness/baseline --allow-missing-baseline --output=.tmp/release-readiness/trend-diff-report.json` -> `PASS` (baseline missing이면 skip)
 6. `python tools/check-release-readiness.py` -> `PASS` (chapter discovery: `chapter_1`, `chapter_2`, `chapter_3`)
-7. local gate artifacts generated:
+7. `node tools/release-readiness/sync-trend-thresholds.js --report=.tmp/release-readiness/trend-diff-report.json --thresholds=tools/release-readiness/trend-thresholds.json --write --lock-baseline` -> `PASS` (operational threshold sync command verified)
+8. local gate artifacts generated:
    - `.tmp/release-readiness/perf-gate-report.json`
    - `.tmp/release-readiness/tuning-gate-report.chapter_1.json`
    - `.tmp/release-readiness/tuning-gate-report.chapter_2.json`
@@ -192,11 +200,11 @@
 
 ## Remaining Blockers
 
-1. No blocking issue for Batch 11-21 release-gate scope.
-2. Trend threshold defaults for newly added chapters currently rely on scaffold policy; chapter-specific regression sensitivity tuning may be needed after live CI history accumulates.
+1. No blocking issue for Batch 11-22 release-gate scope.
+2. chapter_3 threshold는 scaffold 기본값(0.3)에서 동기화된 상태이므로, PR CI 누적 데이터 기준으로 chapter별 민감도 재튜닝 필요.
 
 ## Next Parallel Batch Plan
 
-1. Batch 22: trend threshold chapter profile 자동 생성물(`effectiveThresholds`)을 기반으로 운영용 기준값 동기화 도구 추가.
-2. Batch 23: baseline-required 모드의 PR CI 결과를 기반으로 chapter별 drift 보정 루프(임계치 재조정) 자동화.
+1. Batch 23: baseline-required 모드의 PR CI 결과를 기반으로 chapter별 drift 보정 루프(임계치 재조정) 자동화.
+2. Batch 24: sync CLI 결과를 CI artifact/PR 코멘트와 연결해 threshold 변경 제안 워크플로우 자동화.
 
