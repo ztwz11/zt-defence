@@ -46,6 +46,10 @@ const CHAPTER_TUNING_ENEMY_IDS = Object.freeze({
     primary: 'raider_goblin',
     elite: 'orc_brute',
   }),
+  chapter_3: Object.freeze({
+    primary: 'shadow_raider',
+    elite: 'dread_guard',
+  }),
 });
 
 function isPlainObject(value) {

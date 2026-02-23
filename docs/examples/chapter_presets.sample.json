@@ -183,6 +183,103 @@
           }
         ]
       }
+    },
+    "chapter_3": {
+      "gateHp": 20,
+      "maxGateHp": 20,
+      "gold": 6,
+      "economyConfig": {
+        "waveStartGold": 3,
+        "waveClearBonusGold": 4,
+        "interest": {
+          "enabled": false
+        },
+        "costs": {
+          "summon": 4,
+          "reroll": {
+            "base": 2,
+            "increasePerUse": 1
+          }
+        }
+      },
+      "rewards": [
+        {
+          "type": "Gold",
+          "amount": 2
+        }
+      ],
+      "simulation": {
+        "tickSeconds": 0.25,
+        "durationSeconds": 10,
+        "spawnEvents": [
+          {
+            "time": 0,
+            "enemyId": "shadow_raider",
+            "count": 6,
+            "interval": 0.55
+          },
+          {
+            "time": 1.6,
+            "enemyId": "hex_oracle",
+            "count": 1,
+            "interval": 1
+          },
+          {
+            "time": 2.4,
+            "enemyId": "dread_guard",
+            "count": 1,
+            "interval": 0
+          }
+        ],
+        "enemyCatalog": {
+          "shadow_raider": {
+            "hp": 30,
+            "armor": 4,
+            "resist": 2,
+            "moveSpeed": 0.17
+          },
+          "dread_guard": {
+            "hp": 72,
+            "armor": 12,
+            "resist": 6,
+            "moveSpeed": 0.13
+          },
+          "hex_oracle": {
+            "hp": 56,
+            "armor": 4,
+            "resist": 14,
+            "moveSpeed": 0.12
+          }
+        },
+        "units": [
+          {
+            "id": "archer_1",
+            "atk": 17,
+            "atkSpeed": 1.3,
+            "damageType": "physical",
+            "targeting": "random",
+            "critChance": 0.25,
+            "critMultiplier": 1.7
+          },
+          {
+            "id": "mage_1",
+            "atk": 9,
+            "atkSpeed": 1,
+            "damageType": "magic",
+            "targeting": "frontMost",
+            "critChance": 0.1,
+            "critMultiplier": 1.6,
+            "onHitStatuses": [
+              {
+                "statusId": "burn",
+                "chance": 0.35,
+                "duration": 2.5,
+                "potency": 2
+              }
+            ]
+          }
+        ]
+      }
     }
   }
 }

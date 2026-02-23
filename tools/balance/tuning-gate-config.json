@@ -47,6 +47,24 @@
         "passMaxScore": 0.9,
         "warnMaxScore": 1.4
       }
+    },
+    "chapter_3": {
+      "autoTuneDefaults": {
+        "chapter": "chapter_3",
+        "waveMax": 20,
+        "seeds": 200,
+        "candidates": 24,
+        "searchSeed": 2028,
+        "objective": {
+          "targetClearRate": 0.45,
+          "targetReachedWave": 11,
+          "maxFailRate": 0.45
+        }
+      },
+      "thresholds": {
+        "passMaxScore": 2.6,
+        "warnMaxScore": 3.3
+      }
     }
   },
   "thresholds": {

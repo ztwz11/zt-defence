@@ -154,6 +154,13 @@
 | AL chapter auto-discovery + threshold scaffolding | codex-main | Completed | `tools/release-readiness/check-trend-diff.js`, `tests/perf/trend-diff.test.js` | chapter report filename discovery + scaffold path tests pass |
 | AM scaffold policy thresholds contract | codex-main | Completed | `tools/release-readiness/trend-thresholds.json`, `tests/perf/trend-diff.test.js` | allow-missing-baseline policy for scaffolded chapters validated |
 
+## Batch 19 Completion (chapter_3 onboarding)
+
+| Module | Owner | Status | Owned Paths | Checks |
+| --- | --- | --- | --- | --- |
+| AN chapter_3 preset/content onboarding | codex-main | Completed | `content/chapter-presets.json`, `docs/examples/chapter_presets.sample.json`, `tests/balance/chapter-presets.test.js` | schema validation + chapter_3 context tests pass |
+| AO chapter_3 tuning profile + enemy scaling binding | codex-main | Completed | `tools/balance/tuning-gate-config.json`, `tools/balance/auto-tune.js`, `tests/balance/tuning-gate.test.js`, `tests/balance/auto-tune.test.js` | chapter_3 tuning gate pass (`score=2.423182`) |
+
 ## Current Gate Snapshot
 
 1. `node tools/perf/run-and-check.js --profile=ci-mobile-baseline --iterations=200 --output=.tmp/release-readiness/perf-gate-report.json` -> `PASS`
@@ -169,11 +176,11 @@
 
 ## Remaining Blockers
 
-1. No blocking issue for Batch 11-18 release-gate scope.
-2. Next risk is chapter_3+ preset 확장 시 objective/threshold 재정렬 필요.
+1. No blocking issue for Batch 11-19 release-gate scope.
+2. `check-release-readiness`/CI baseline 생성 경로는 chapter 리스트가 아직 고정(`chapter_1`, `chapter_2`)이라 chapter_3 artifact 자동 수집이 미적용 상태.
 
 ## Next Parallel Batch Plan
 
-1. Batch 19: chapter_3 preset 온보딩(프리셋/게이트 프로파일/스키마 샘플 동기화)으로 확장 경로 검증.
-2. Batch 20: release-readiness/workflow의 chapter 리스트를 content 자동 탐색으로 전환.
+1. Batch 20: release-readiness/workflow의 chapter 리스트를 content 자동 탐색으로 전환.
+2. Batch 21: chapter_3을 포함한 PR baseline artifact diff 경로를 CI에서 검증하도록 확장.
 

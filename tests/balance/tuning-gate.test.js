@@ -158,6 +158,61 @@ test('resolveScopedConfig applies chapter overrides for thresholds and auto-tune
   assert.equal(Object.prototype.hasOwnProperty.call(scoped.config, 'chapters'), false);
 });
 
+test('resolveScopedConfig selects chapter_3 profile when configured', () => {
+  const scoped = resolveScopedConfig(
+    {
+      autoTuneDefaults: {
+        chapter: 'chapter_1',
+        seeds: 100,
+      },
+      thresholds: {
+        passMaxScore: 0.8,
+        warnMaxScore: 1.2,
+      },
+      chapters: {
+        chapter_2: {
+          autoTuneDefaults: {
+            chapter: 'chapter_2',
+            seeds: 180,
+          },
+          thresholds: {
+            passMaxScore: 0.9,
+            warnMaxScore: 1.4,
+          },
+        },
+        chapter_3: {
+          autoTuneDefaults: {
+            chapter: 'chapter_3',
+            seeds: 220,
+            searchSeed: 2028,
+          },
+          thresholds: {
+            passMaxScore: 2.6,
+            warnMaxScore: 3.3,
+          },
+        },
+      },
+    },
+    {
+      chapter: 'chapter_3',
+    }
+  );
+
+  assert.equal(scoped.requestedChapterId, 'chapter_3');
+  assert.equal(scoped.selectedChapterId, 'chapter_3');
+  assert.equal(scoped.hasChapterOverride, true);
+  assert.deepEqual(scoped.availableChapterIds, ['chapter_2', 'chapter_3']);
+  assert.deepEqual(scoped.config.thresholds, {
+    passMaxScore: 2.6,
+    warnMaxScore: 3.3,
+  });
+  assert.deepEqual(scoped.config.autoTuneDefaults, {
+    chapter: 'chapter_3',
+    seeds: 220,
+    searchSeed: 2028,
+  });
+});
+
 test('runTuningGate supports --report mode and default internal auto-tune mode', () => {
   const configPath = 'C:\\gate-config.json';
   const reportPath = 'C:\\auto-tune-report.json';
