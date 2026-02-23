@@ -224,6 +224,12 @@
 | BF chapter policy drift guardrail | codex-main | Completed | `tools/release-readiness/build-adaptive-rebalance-policy.js`, `tests/perf/build-adaptive-rebalance-policy.test.js` | chapter별 정책을 이전 adaptive policy와 비교해 step-limit 적용 + `guardrail` 메타/`guardrailLimitedChapterIds` 생성 |
 | BG previous policy restore/archive wiring | codex-main | Completed | `tools/check-release-readiness.py`, `.github/workflows/release-readiness.yml` | `--previous-policy` 경로를 release check에 고정 연결 + PR 캐시에서 직전 adaptive policy 복원/신규 정책 아카이브 |
 
+## Batch 29 Completion (post-apply external webhook alert bridge)
+
+| Module | Owner | Status | Owned Paths | Checks |
+| --- | --- | --- | --- | --- |
+| BH webhook notification bridge on post-verify failure | codex-main | Completed | `.github/workflows/threshold-proposal-apply.yml` | post-apply verify 실패+auto-revert 시 `THRESHOLD_APPLY_ALERT_WEBHOOK_URL`로 JSON payload 전송(best-effort) + webhook payload/result artifact 생성 |
+
 ## Current Gate Snapshot
 
 1. `node tools/perf/run-and-check.js --profile=ci-mobile-baseline --iterations=200 --output=.tmp/release-readiness/perf-gate-report.json` -> `PASS`
@@ -237,7 +243,7 @@
 9. `node tools/release-readiness/rebalance-trend-thresholds.js --report=.tmp/release-readiness/trend-diff-report.json --thresholds=tools/release-readiness/trend-thresholds.json --adaptive-policy=.tmp/release-readiness/adaptive-rebalance-policy.json --output=.tmp/release-readiness/trend-threshold-recommendation.json` -> `PASS` (adaptive policy 연동 drift threshold recommendation generated)
 10. `node tools/release-readiness/build-threshold-proposal-comment.js --trend-report=.tmp/release-readiness/trend-diff-report.json --sync-summary=.tmp/release-readiness/trend-threshold-sync-summary.json --rebalance-report=.tmp/release-readiness/trend-threshold-recommendation.json --output=.tmp/release-readiness/trend-threshold-proposal-comment.md --output-json=.tmp/release-readiness/trend-threshold-proposal.json` -> `PASS` (PR 코멘트용 proposal artifact generated)
 11. `node tools/release-readiness/apply-threshold-proposal.js --proposal=.tmp/release-readiness/trend-threshold-proposal.json --thresholds=tools/release-readiness/trend-thresholds.json --output=.tmp/release-readiness/trend-thresholds.applied.preview.json --summary-output=.tmp/release-readiness/trend-threshold-apply-summary.json --allow-manual-review` -> `PASS` (manual apply preview artifact generated)
-12. `threshold-proposal-apply.yml` (`workflow_dispatch`)에서 apply 후 release-readiness 재검증 실패 시 `post-apply-revert-summary.json` 생성 + threshold 파일 자동복구 + 워크플로우 실패 처리
+12. `threshold-proposal-apply.yml` (`workflow_dispatch`)에서 apply 후 release-readiness 재검증 실패 시 `post-apply-revert-summary.json` 생성 + threshold 파일 자동복구 + (옵션) `THRESHOLD_APPLY_ALERT_WEBHOOK_URL` 외부 webhook 알림 + 워크플로우 실패 처리
 13. local gate artifacts generated:
    - `.tmp/release-readiness/perf-gate-report.json`
    - `.tmp/release-readiness/tuning-gate-report.chapter_1.json`
@@ -255,14 +261,16 @@
    - `.tmp/release-readiness/trend-threshold-apply-summary.json`
    - `.tmp/release-readiness/post-apply-verification.json` (workflow_dispatch 실행시)
    - `.tmp/release-readiness/post-apply-revert-summary.json` (검증 실패시)
+   - `.tmp/release-readiness/post-apply-webhook-payload.json` (검증 실패시 webhook payload)
+   - `.tmp/release-readiness/post-apply-webhook-result.json` (검증 실패시 webhook 전송 결과)
 
 ## Remaining Blockers
 
-1. No blocking issue for Batch 11-28 release-gate scope.
-2. post-apply 실패 알림이 현재는 workflow summary/annotation 중심이며, 외부 채널(Slack/Teams/webhook) 연동은 아직 없음.
+1. No blocking issue for Batch 11-29 release-gate scope.
+2. 외부 알림 활성화는 저장소 시크릿 `THRESHOLD_APPLY_ALERT_WEBHOOK_URL` 구성 여부에 의존.
 
 ## Next Parallel Batch Plan
 
-1. Batch 29: post-apply 실패 알림의 외부 채널(webhook) 연동 확장.
-2. Batch 30: external alert payload 표준화(요약/아티팩트 링크/재실행 가이드) 및 재시도 정책 정교화.
+1. Batch 30: external alert payload 표준화 확장(실패 스텝 상세/threshold diff 요약/PR 링크).
+2. Batch 31: webhook 전송 실패 재시도/backoff 및 채널별 adapter(Slack/Teams) 분기 지원.
 
