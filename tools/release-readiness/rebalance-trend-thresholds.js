@@ -44,6 +44,7 @@ function parseArgs(argv) {
     reportPath: DEFAULT_REPORT_PATH,
     thresholdsPath: DEFAULT_THRESHOLDS_PATH,
     outputPath: DEFAULT_OUTPUT_PATH,
+    adaptivePolicyPath: null,
     write: false,
     policy: { ...DEFAULT_POLICY },
   };
@@ -85,6 +86,17 @@ function parseArgs(argv) {
 
     if (token === '--output') {
       parsed.outputPath = String(args[index + 1] || '').trim();
+      index += 1;
+      continue;
+    }
+
+    if (token.startsWith('--adaptive-policy=')) {
+      parsed.adaptivePolicyPath = token.slice('--adaptive-policy='.length).trim();
+      continue;
+    }
+
+    if (token === '--adaptive-policy') {
+      parsed.adaptivePolicyPath = String(args[index + 1] || '').trim();
       index += 1;
       continue;
     }
@@ -185,6 +197,10 @@ function parseArgs(argv) {
     throw new Error('Invalid --output value. Expected a non-empty path.');
   }
 
+  if (parsed.adaptivePolicyPath !== null && parsed.adaptivePolicyPath.length === 0) {
+    throw new Error('Invalid --adaptive-policy value. Expected a non-empty path.');
+  }
+
   if (parsed.policy.minScoreIncreaseMax < 0) {
     throw new Error('Invalid --min-score-increase-max value. Expected a non-negative number.');
   }
@@ -218,6 +234,7 @@ function printHelp() {
     `  --report=<path>                  Trend diff report path (default: ${DEFAULT_REPORT_PATH})`,
     `  --thresholds=<path>              Trend thresholds path (default: ${DEFAULT_THRESHOLDS_PATH})`,
     `  --output=<path>                  Recommendation output path (default: ${DEFAULT_OUTPUT_PATH})`,
+    '  --adaptive-policy=<path>         Optional adaptive chapter policy json',
     '  --write                          Apply proposed scoreIncreaseMax values to --thresholds file',
     `  --min-score-increase-max=<num>   Lower clamp for scoreIncreaseMax (default: ${DEFAULT_POLICY.minScoreIncreaseMax})`,
     `  --max-score-increase-max=<num>   Upper clamp for scoreIncreaseMax (default: ${DEFAULT_POLICY.maxScoreIncreaseMax})`,
@@ -278,6 +295,41 @@ function writeJsonFile(filePath, payload, dependencies) {
 
   mkdirSync(dirname(filePath), { recursive: true });
   writeFileSync(filePath, `${JSON.stringify(payload, null, 2)}\n`);
+}
+
+function readAdaptivePolicy(adaptivePolicyPath, dependencies) {
+  if (typeof adaptivePolicyPath !== 'string' || adaptivePolicyPath.trim().length === 0) {
+    return null;
+  }
+  return readJsonFile(adaptivePolicyPath, 'adaptive_policy', dependencies);
+}
+
+function resolveAdaptiveChapterPolicy(basePolicy, adaptivePolicy, chapterId) {
+  const baseline = isPlainObject(basePolicy) ? basePolicy : {};
+  const chapterPolicy = isPlainObject(adaptivePolicy?.chapters?.[chapterId]?.policy)
+    ? adaptivePolicy.chapters[chapterId].policy
+    : {};
+  const chapterActive =
+    adaptivePolicy?.chapters?.[chapterId]?.active === undefined
+      ? true
+      : adaptivePolicy.chapters[chapterId].active === true;
+
+  if (!chapterActive) {
+    return baseline;
+  }
+
+  return {
+    ...baseline,
+    tightenMargin: Number.isFinite(Number(chapterPolicy.tightenMargin))
+      ? Number(chapterPolicy.tightenMargin)
+      : baseline.tightenMargin,
+    tightenRate: Number.isFinite(Number(chapterPolicy.tightenRate))
+      ? Number(chapterPolicy.tightenRate)
+      : baseline.tightenRate,
+    relaxMargin: Number.isFinite(Number(chapterPolicy.relaxMargin))
+      ? Number(chapterPolicy.relaxMargin)
+      : baseline.relaxMargin,
+  };
 }
 
 function toFiniteNumber(value, fallback) {
@@ -451,9 +503,16 @@ function rebalanceTrendThresholds(options, dependencies) {
     typeof sourceOptions.outputPath === 'string' && sourceOptions.outputPath.trim().length > 0
       ? resolvePathFromCwd(sourceOptions.outputPath, deps)
       : null;
+  const resolvedAdaptivePolicyPath =
+    typeof sourceOptions.adaptivePolicyPath === 'string' && sourceOptions.adaptivePolicyPath.trim().length > 0
+      ? resolvePathFromCwd(sourceOptions.adaptivePolicyPath, deps)
+      : null;
 
   const report = readJsonFile(resolvedReportPath, 'trend_report', deps);
   const thresholdPayload = readJsonFile(resolvedThresholdsPath, 'thresholds', deps);
+  const adaptivePolicy = resolvedAdaptivePolicyPath
+    ? readAdaptivePolicy(resolvedAdaptivePolicyPath, deps)
+    : null;
   const currentThresholds = normalizeTrendThresholds(thresholdPayload);
   const nextThresholds = cloneJson(currentThresholds);
   const tuningDeltas = isPlainObject(report?.deltas?.tuning) ? report.deltas.tuning : {};
@@ -473,7 +532,8 @@ function rebalanceTrendThresholds(options, dependencies) {
       statusRegression: regressionIndexes.statusRegressionChapterIds.has(chapterId),
       missingRegression: regressionIndexes.missingChapterIds.has(chapterId),
     };
-    const chapterResult = computeChapterRebalance(chapterThreshold, chapterDelta, chapterFlags, normalizedPolicy);
+    const chapterPolicy = resolveAdaptiveChapterPolicy(normalizedPolicy, adaptivePolicy, chapterId);
+    const chapterResult = computeChapterRebalance(chapterThreshold, chapterDelta, chapterFlags, chapterPolicy);
     chapters[chapterId] = chapterResult;
 
     if (chapterResult.action === 'manual_review') {
@@ -501,6 +561,7 @@ function rebalanceTrendThresholds(options, dependencies) {
     reportPath: resolvedReportPath,
     thresholdsPath: resolvedThresholdsPath,
     outputPath: resolvedOutputPath,
+    adaptivePolicyPath: resolvedAdaptivePolicyPath,
     policy: normalizedPolicy,
     summary: {
       chaptersConsidered: chapterIds.length,
@@ -580,6 +641,7 @@ module.exports = {
   DEFAULT_POLICY,
   parseArgs,
   buildRegressionIndexes,
+  resolveAdaptiveChapterPolicy,
   computeChapterRebalance,
   rebalanceTrendThresholds,
   createSummaryLine,

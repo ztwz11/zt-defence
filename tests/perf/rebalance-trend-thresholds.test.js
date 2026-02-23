@@ -84,6 +84,7 @@ test('parseArgs supports rebalance policy options', () => {
     '--report=.tmp/release-readiness/custom-trend.json',
     '--thresholds=tools/release-readiness/custom-thresholds.json',
     '--output=.tmp/release-readiness/recommendation.json',
+    '--adaptive-policy=.tmp/release-readiness/adaptive-policy.json',
     '--min-score-increase-max=0.1',
     '--max-score-increase-max=1.4',
     '--tighten-margin=0.02',
@@ -97,6 +98,7 @@ test('parseArgs supports rebalance policy options', () => {
     reportPath: '.tmp/release-readiness/custom-trend.json',
     thresholdsPath: 'tools/release-readiness/custom-thresholds.json',
     outputPath: '.tmp/release-readiness/recommendation.json',
+    adaptivePolicyPath: '.tmp/release-readiness/adaptive-policy.json',
     write: true,
     policy: {
       minScoreIncreaseMax: 0.1,
@@ -181,6 +183,79 @@ test('rebalanceTrendThresholds relaxes chapter threshold when score regression i
   assert.equal(result.writtenThresholdsPath, thresholdsPath);
   assert.equal(result.writtenOutputPath, outputPath);
   assert.equal(writes[thresholdsPath].tuning.chapters.chapter_2.scoreIncreaseMax, 0.34);
+});
+
+test('rebalanceTrendThresholds applies adaptive chapter policy when provided', () => {
+  const reportPath = 'C:/repo/.tmp/release-readiness/trend-diff-report.json';
+  const thresholdsPath = 'C:/repo/tools/release-readiness/trend-thresholds.json';
+  const adaptivePolicyPath = 'C:/repo/.tmp/release-readiness/adaptive-rebalance-policy.json';
+  const reportPayload = createReportPayload({
+    regressions: [],
+    tuningDeltas: {
+      chapter_1: { score: { delta: 0.1 } },
+      chapter_2: { score: { delta: 0.1 } },
+      chapter_3: { score: { delta: 0.1 } },
+    },
+  });
+  const adaptivePayload = {
+    chapters: {
+      chapter_1: {
+        active: true,
+        policy: {
+          tightenMargin: 0.01,
+          tightenRate: 0.8,
+          relaxMargin: 0.03,
+        },
+      },
+    },
+  };
+  const fileMap = {
+    [reportPath]: JSON.stringify(reportPayload),
+    [thresholdsPath]: JSON.stringify(createThresholdsPayload()),
+    [adaptivePolicyPath]: JSON.stringify(adaptivePayload),
+  };
+
+  const result = rebalanceTrendThresholds(
+    {
+      reportPath,
+      thresholdsPath,
+      outputPath: null,
+      adaptivePolicyPath,
+      write: false,
+      policy: {
+        minScoreIncreaseMax: 0.05,
+        maxScoreIncreaseMax: 2,
+        tightenMargin: 0.03,
+        tightenRate: 0.4,
+        relaxMargin: 0.03,
+      },
+    },
+    {
+      cwd() {
+        return 'C:/repo';
+      },
+      resolvePath(cwd, targetPath) {
+        if (/^[A-Za-z]:[\\/]/.test(targetPath)) {
+          return String(targetPath).replaceAll('\\', '/');
+        }
+        return `${cwd}/${String(targetPath).replaceAll('\\', '/')}`;
+      },
+      readFileSync(filePath) {
+        const normalized = String(filePath).replaceAll('\\', '/');
+        if (!Object.prototype.hasOwnProperty.call(fileMap, normalized)) {
+          throw new Error(`Unexpected read: ${normalized}`);
+        }
+        return fileMap[normalized];
+      },
+      now() {
+        return '2026-02-23T00:00:00.000Z';
+      },
+    }
+  );
+
+  assert.equal(result.chapters.chapter_1.action, 'tighten');
+  assert.equal(result.chapters.chapter_1.proposedScoreIncreaseMax, 0.128);
+  assert.equal(result.chapters.chapter_2.proposedScoreIncreaseMax, 0.202);
 });
 
 test('rebalanceTrendThresholds marks manual review for status degradation and keeps threshold', () => {

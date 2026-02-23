@@ -115,6 +115,21 @@ def build_checks(chapter_ids: list[str], allow_missing_baseline: bool) -> list[t
 
     checks.append(
         (
+            "adaptive rebalance policy build",
+            [
+                "node",
+                "tools/release-readiness/build-adaptive-rebalance-policy.js",
+                "--history-dir=.tmp/release-readiness/history",
+                "--thresholds=tools/release-readiness/trend-thresholds.json",
+                "--seed-report=.tmp/release-readiness/trend-diff-report.json",
+                "--output=.tmp/release-readiness/adaptive-rebalance-policy.json",
+                "--min-samples=3",
+            ],
+        )
+    )
+
+    checks.append(
+        (
             "trend threshold sync preview",
             [
                 "node",
@@ -137,6 +152,7 @@ def build_checks(chapter_ids: list[str], allow_missing_baseline: bool) -> list[t
                 "tools/release-readiness/rebalance-trend-thresholds.js",
                 "--report=.tmp/release-readiness/trend-diff-report.json",
                 "--thresholds=tools/release-readiness/trend-thresholds.json",
+                "--adaptive-policy=.tmp/release-readiness/adaptive-rebalance-policy.json",
                 "--output=.tmp/release-readiness/trend-threshold-recommendation.json",
             ],
         )

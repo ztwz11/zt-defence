@@ -27,6 +27,15 @@ jobs:
         with:
           node-version: "22"
 
+      - name: Restore PR trend history cache
+        if: github.event_name == 'pull_request'
+        uses: actions/cache/restore@v4
+        with:
+          path: .tmp/release-readiness/history
+          key: release-readiness-pr-${{ github.event.pull_request.number }}-${{ github.run_id }}
+          restore-keys: |
+            release-readiness-pr-${{ github.event.pull_request.number }}-
+
       - name: Generate baseline gate artifacts (PR only)
         if: github.event_name == 'pull_request'
         run: |
@@ -68,6 +77,22 @@ PY
         env:
           RELEASE_READINESS_REQUIRE_BASELINE: ${{ github.event_name == 'pull_request' && '1' || '0' }}
         run: python tools/check-release-readiness.py
+
+      - name: Archive trend report to PR history cache
+        if: github.event_name == 'pull_request'
+        run: |
+          set -euo pipefail
+          mkdir -p .tmp/release-readiness/history
+          if [ -f .tmp/release-readiness/trend-diff-report.json ]; then
+            cp .tmp/release-readiness/trend-diff-report.json ".tmp/release-readiness/history/trend-diff-report.pr-${{ github.event.pull_request.number }}.run-${{ github.run_id }}.${{ github.sha }}.json"
+          fi
+
+      - name: Save PR trend history cache
+        if: github.event_name == 'pull_request'
+        uses: actions/cache/save@v4
+        with:
+          path: .tmp/release-readiness/history
+          key: release-readiness-pr-${{ github.event.pull_request.number }}-${{ github.run_id }}
 
       - name: Upsert threshold proposal PR comment
         if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
@@ -130,4 +155,5 @@ PY
           path: |
             .tmp/release-readiness/*.json
             .tmp/release-readiness/*.md
+            .tmp/release-readiness/history/*.json
           if-no-files-found: warn
