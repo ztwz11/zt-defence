@@ -113,6 +113,19 @@ def build_checks(chapter_ids: list[str], allow_missing_baseline: bool) -> list[t
         )
     )
 
+    checks.append(
+        (
+            "trend threshold rebalance recommendation",
+            [
+                "node",
+                "tools/release-readiness/rebalance-trend-thresholds.js",
+                "--report=.tmp/release-readiness/trend-diff-report.json",
+                "--thresholds=tools/release-readiness/trend-thresholds.json",
+                "--output=.tmp/release-readiness/trend-threshold-recommendation.json",
+            ],
+        )
+    )
+
     return checks
 
 

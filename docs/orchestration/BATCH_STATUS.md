@@ -182,6 +182,13 @@
 | AT threshold sync CLI from trend report | codex-main | Completed | `tools/release-readiness/sync-trend-thresholds.js`, `tests/perf/sync-trend-thresholds.test.js` | parse/sync/dry-run tests pass |
 | AU chapter_3 operational threshold onboarding | codex-main | Completed | `tools/release-readiness/trend-thresholds.json` | sync CLI 실행으로 `chapter_3` profile 반영 (`allowMissingBaseline=false`) |
 
+## Batch 23 Completion (chapter drift threshold rebalance loop automation)
+
+| Module | Owner | Status | Owned Paths | Checks |
+| --- | --- | --- | --- | --- |
+| AV drift threshold rebalance CLI | codex-main | Completed | `tools/release-readiness/rebalance-trend-thresholds.js`, `tests/perf/rebalance-trend-thresholds.test.js` | score regression relax + stable drift tighten + status degrade manual-review tests pass |
+| AW release-readiness rebalance artifact wiring | codex-main | Completed | `tools/check-release-readiness.py` | `.tmp/release-readiness/trend-threshold-recommendation.json` 자동 생성 |
+
 ## Current Gate Snapshot
 
 1. `node tools/perf/run-and-check.js --profile=ci-mobile-baseline --iterations=200 --output=.tmp/release-readiness/perf-gate-report.json` -> `PASS`
@@ -191,20 +198,22 @@
 5. `node tools/release-readiness/check-trend-diff.js --current-dir=.tmp/release-readiness --baseline-dir=.tmp/release-readiness/baseline --allow-missing-baseline --output=.tmp/release-readiness/trend-diff-report.json` -> `PASS` (baseline missing이면 skip)
 6. `python tools/check-release-readiness.py` -> `PASS` (chapter discovery: `chapter_1`, `chapter_2`, `chapter_3`)
 7. `node tools/release-readiness/sync-trend-thresholds.js --report=.tmp/release-readiness/trend-diff-report.json --thresholds=tools/release-readiness/trend-thresholds.json --write --lock-baseline` -> `PASS` (operational threshold sync command verified)
-8. local gate artifacts generated:
+8. `node tools/release-readiness/rebalance-trend-thresholds.js --report=.tmp/release-readiness/trend-diff-report.json --thresholds=tools/release-readiness/trend-thresholds.json --output=.tmp/release-readiness/trend-threshold-recommendation.json` -> `PASS` (drift threshold recommendation generated)
+9. local gate artifacts generated:
    - `.tmp/release-readiness/perf-gate-report.json`
    - `.tmp/release-readiness/tuning-gate-report.chapter_1.json`
    - `.tmp/release-readiness/tuning-gate-report.chapter_2.json`
    - `.tmp/release-readiness/tuning-gate-report.chapter_3.json`
    - `.tmp/release-readiness/trend-diff-report.json`
+   - `.tmp/release-readiness/trend-threshold-recommendation.json`
 
 ## Remaining Blockers
 
-1. No blocking issue for Batch 11-22 release-gate scope.
-2. chapter_3 threshold는 scaffold 기본값(0.3)에서 동기화된 상태이므로, PR CI 누적 데이터 기준으로 chapter별 민감도 재튜닝 필요.
+1. No blocking issue for Batch 11-23 release-gate scope.
+2. rebalance 결과를 PR 코멘트로 노출하고 threshold 변경 제안을 리뷰 루프에 연결하는 자동화가 아직 없음.
 
 ## Next Parallel Batch Plan
 
-1. Batch 23: baseline-required 모드의 PR CI 결과를 기반으로 chapter별 drift 보정 루프(임계치 재조정) 자동화.
-2. Batch 24: sync CLI 결과를 CI artifact/PR 코멘트와 연결해 threshold 변경 제안 워크플로우 자동화.
+1. Batch 24: sync/rebalance 결과를 CI artifact + PR 코멘트에 연결하는 threshold 변경 제안 워크플로우 자동화.
+2. Batch 25: 제안된 threshold 변경사항의 승인/적용(수동 승인 후 반영) 파이프라인 확장.
 
