@@ -196,6 +196,13 @@
 | AX sync summary + preview artifact contract | codex-main | Completed | `tools/release-readiness/sync-trend-thresholds.js`, `tests/perf/sync-trend-thresholds.test.js`, `tools/check-release-readiness.py` | `--summary-output` 기반 sync summary/json preview 생성 |
 | AY proposal comment generator + CI PR upsert | codex-main | Completed | `tools/release-readiness/build-threshold-proposal-comment.js`, `tests/perf/build-threshold-proposal-comment.test.js`, `.github/workflows/release-readiness.yml`, `tools/check-release-readiness.py` | proposal markdown/json artifact 생성 + 내부 PR 코멘트 upsert 단계 연결 |
 
+## Batch 25 Completion (manual approval + apply pipeline)
+
+| Module | Owner | Status | Owned Paths | Checks |
+| --- | --- | --- | --- | --- |
+| AZ threshold apply CLI + blocking policy | codex-main | Completed | `tools/release-readiness/apply-threshold-proposal.js`, `tests/perf/apply-threshold-proposal.test.js`, `tools/check-release-readiness.py` | manual_review 차단 기본정책 + `--allow-manual-review` override + apply preview/summary artifact 생성 |
+| BA workflow_dispatch apply automation | codex-main | Completed | `.github/workflows/threshold-proposal-apply.yml` | 수동 승인 트리거에서 proposal 생성→apply→(옵션)커밋/푸시 파이프라인 연결 |
+
 ## Current Gate Snapshot
 
 1. `node tools/perf/run-and-check.js --profile=ci-mobile-baseline --iterations=200 --output=.tmp/release-readiness/perf-gate-report.json` -> `PASS`
@@ -207,7 +214,8 @@
 7. `node tools/release-readiness/sync-trend-thresholds.js --report=.tmp/release-readiness/trend-diff-report.json --thresholds=tools/release-readiness/trend-thresholds.json --all-chapters --lock-baseline --output=.tmp/release-readiness/trend-thresholds.synced.preview.json --summary-output=.tmp/release-readiness/trend-threshold-sync-summary.json` -> `PASS` (sync preview + summary generated)
 8. `node tools/release-readiness/rebalance-trend-thresholds.js --report=.tmp/release-readiness/trend-diff-report.json --thresholds=tools/release-readiness/trend-thresholds.json --output=.tmp/release-readiness/trend-threshold-recommendation.json` -> `PASS` (drift threshold recommendation generated)
 9. `node tools/release-readiness/build-threshold-proposal-comment.js --trend-report=.tmp/release-readiness/trend-diff-report.json --sync-summary=.tmp/release-readiness/trend-threshold-sync-summary.json --rebalance-report=.tmp/release-readiness/trend-threshold-recommendation.json --output=.tmp/release-readiness/trend-threshold-proposal-comment.md --output-json=.tmp/release-readiness/trend-threshold-proposal.json` -> `PASS` (PR 코멘트용 proposal artifact generated)
-10. local gate artifacts generated:
+10. `node tools/release-readiness/apply-threshold-proposal.js --proposal=.tmp/release-readiness/trend-threshold-proposal.json --thresholds=tools/release-readiness/trend-thresholds.json --output=.tmp/release-readiness/trend-thresholds.applied.preview.json --summary-output=.tmp/release-readiness/trend-threshold-apply-summary.json --allow-manual-review` -> `PASS` (manual apply preview artifact generated)
+11. local gate artifacts generated:
    - `.tmp/release-readiness/perf-gate-report.json`
    - `.tmp/release-readiness/tuning-gate-report.chapter_1.json`
    - `.tmp/release-readiness/tuning-gate-report.chapter_2.json`
@@ -218,14 +226,16 @@
    - `.tmp/release-readiness/trend-threshold-recommendation.json`
    - `.tmp/release-readiness/trend-threshold-proposal-comment.md`
    - `.tmp/release-readiness/trend-threshold-proposal.json`
+   - `.tmp/release-readiness/trend-thresholds.applied.preview.json`
+   - `.tmp/release-readiness/trend-threshold-apply-summary.json`
 
 ## Remaining Blockers
 
-1. No blocking issue for Batch 11-24 release-gate scope.
-2. threshold 변경 제안의 승인/적용을 자동 가드로 연결하는 apply 단계(수동 승인/머지 규칙)가 아직 없음.
+1. No blocking issue for Batch 11-25 release-gate scope.
+2. apply workflow에서 변경 반영 이후 후속 검증(재실행/자동 롤백)까지 포함한 post-apply hard gate는 아직 없음.
 
 ## Next Parallel Batch Plan
 
-1. Batch 25: 제안된 threshold 변경사항의 승인/적용(수동 승인 후 반영) 파이프라인 확장.
-2. Batch 26: PR 누적 trend 데이터 기반 chapter별 adaptive policy(변동성 기반 margin/rate) 고도화.
+1. Batch 26: PR 누적 trend 데이터 기반 chapter별 adaptive policy(변동성 기반 margin/rate) 고도화.
+2. Batch 27: apply workflow post-apply 검증 실패 시 자동 revert/알림 워크플로우 추가.
 

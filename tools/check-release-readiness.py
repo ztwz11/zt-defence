@@ -157,6 +157,21 @@ def build_checks(chapter_ids: list[str], allow_missing_baseline: bool) -> list[t
         )
     )
 
+    checks.append(
+        (
+            "trend threshold apply preview",
+            [
+                "node",
+                "tools/release-readiness/apply-threshold-proposal.js",
+                "--proposal=.tmp/release-readiness/trend-threshold-proposal.json",
+                "--thresholds=tools/release-readiness/trend-thresholds.json",
+                "--output=.tmp/release-readiness/trend-thresholds.applied.preview.json",
+                "--summary-output=.tmp/release-readiness/trend-threshold-apply-summary.json",
+                "--allow-manual-review",
+            ],
+        )
+    )
+
     return checks
 
 
