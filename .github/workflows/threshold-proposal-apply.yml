@@ -50,6 +50,12 @@ jobs:
       - name: Generate release-readiness proposal artifacts
         run: python tools/check-release-readiness.py
 
+      - name: Backup threshold file before apply
+        run: |
+          set -euo pipefail
+          mkdir -p .tmp/release-readiness/backup
+          cp tools/release-readiness/trend-thresholds.json .tmp/release-readiness/backup/trend-thresholds.before-apply.json
+
       - name: Apply threshold proposal
         run: |
           set -euo pipefail
@@ -70,13 +76,78 @@ jobs:
               --write
           fi
 
+      - name: Post-apply release-readiness verification
+        id: post_verify
+        continue-on-error: true
+        run: |
+          set +e
+          python tools/check-release-readiness.py
+          VERIFY_EXIT=$?
+          set -e
+          echo "exit_code=${VERIFY_EXIT}" >> "$GITHUB_OUTPUT"
+          export VERIFY_EXIT
+          python - <<'PY'
+import json
+import os
+from datetime import datetime, timezone
+from pathlib import Path
+
+exit_code = int(os.environ["VERIFY_EXIT"])
+payload = {
+    "generatedAt": datetime.now(timezone.utc).isoformat(),
+    "ok": exit_code == 0,
+    "exitCode": exit_code,
+}
+path = Path(".tmp/release-readiness/post-apply-verification.json")
+path.parent.mkdir(parents=True, exist_ok=True)
+path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+PY
+          if [ "${VERIFY_EXIT}" -ne 0 ]; then
+            exit 1
+          fi
+
+      - name: Auto-revert threshold file on verification failure
+        if: steps.post_verify.outcome == 'failure'
+        run: |
+          set -euo pipefail
+          cp .tmp/release-readiness/backup/trend-thresholds.before-apply.json tools/release-readiness/trend-thresholds.json
+          python - <<'PY'
+import json
+from datetime import datetime, timezone
+from pathlib import Path
+
+payload = {
+    "generatedAt": datetime.now(timezone.utc).isoformat(),
+    "reverted": True,
+    "reason": "post_apply_verification_failed",
+}
+path = Path(".tmp/release-readiness/post-apply-revert-summary.json")
+path.parent.mkdir(parents=True, exist_ok=True)
+path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+PY
+
+      - name: Publish auto-revert summary
+        if: steps.post_verify.outcome == 'failure'
+        run: |
+          echo "### Threshold Apply Auto-Revert" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Status: FAILED post-apply verification" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Verification exit code: ${{ steps.post_verify.outputs.exit_code }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Action: Restored tools/release-readiness/trend-thresholds.json from backup" >> "$GITHUB_STEP_SUMMARY"
+          echo "::error::Post-apply verification failed. Threshold updates were reverted in workspace."
+
+      - name: Fail workflow after auto-revert
+        if: steps.post_verify.outcome == 'failure'
+        run: exit 1
+
       - name: Commit threshold updates
+        if: steps.post_verify.outcome == 'success'
         run: |
           set -euo pipefail
           if git diff --quiet -- tools/release-readiness/trend-thresholds.json; then
             echo "has_changes=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
+          echo "has_changes=true" >> "$GITHUB_OUTPUT"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add tools/release-readiness/trend-thresholds.json

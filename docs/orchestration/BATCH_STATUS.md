@@ -210,6 +210,13 @@
 | BB adaptive rebalance policy builder | codex-main | Completed | `tools/release-readiness/build-adaptive-rebalance-policy.js`, `tests/perf/build-adaptive-rebalance-policy.test.js`, `tools/check-release-readiness.py` | history + seed-report 기반 chapter별 adaptive margin/rate 정책 아티팩트 생성 |
 | BC PR trend history cache + rebalance adaptive wiring | codex-main | Completed | `.github/workflows/release-readiness.yml`, `tools/release-readiness/rebalance-trend-thresholds.js`, `tests/perf/rebalance-trend-thresholds.test.js`, `tools/check-release-readiness.py` | PR별 cache restore/save로 history 누적 + rebalance에서 adaptive policy override 적용 |
 
+## Batch 27 Completion (post-apply verify failure auto-revert + alert chain)
+
+| Module | Owner | Status | Owned Paths | Checks |
+| --- | --- | --- | --- | --- |
+| BD threshold apply post-verify hard gate | codex-main | Completed | `.github/workflows/threshold-proposal-apply.yml` | apply 후 `python tools/check-release-readiness.py` 재검증, 실패시 워크플로우 실패 처리 |
+| BE auto-revert + notification summary | codex-main | Completed | `.github/workflows/threshold-proposal-apply.yml` | 실패시 threshold 파일 백업본 자동 복구 + `GITHUB_STEP_SUMMARY`/error annotation + revert summary artifact 생성 |
+
 ## Current Gate Snapshot
 
 1. `node tools/perf/run-and-check.js --profile=ci-mobile-baseline --iterations=200 --output=.tmp/release-readiness/perf-gate-report.json` -> `PASS`
@@ -223,7 +230,8 @@
 9. `node tools/release-readiness/rebalance-trend-thresholds.js --report=.tmp/release-readiness/trend-diff-report.json --thresholds=tools/release-readiness/trend-thresholds.json --adaptive-policy=.tmp/release-readiness/adaptive-rebalance-policy.json --output=.tmp/release-readiness/trend-threshold-recommendation.json` -> `PASS` (adaptive policy 연동 drift threshold recommendation generated)
 10. `node tools/release-readiness/build-threshold-proposal-comment.js --trend-report=.tmp/release-readiness/trend-diff-report.json --sync-summary=.tmp/release-readiness/trend-threshold-sync-summary.json --rebalance-report=.tmp/release-readiness/trend-threshold-recommendation.json --output=.tmp/release-readiness/trend-threshold-proposal-comment.md --output-json=.tmp/release-readiness/trend-threshold-proposal.json` -> `PASS` (PR 코멘트용 proposal artifact generated)
 11. `node tools/release-readiness/apply-threshold-proposal.js --proposal=.tmp/release-readiness/trend-threshold-proposal.json --thresholds=tools/release-readiness/trend-thresholds.json --output=.tmp/release-readiness/trend-thresholds.applied.preview.json --summary-output=.tmp/release-readiness/trend-threshold-apply-summary.json --allow-manual-review` -> `PASS` (manual apply preview artifact generated)
-12. local gate artifacts generated:
+12. `threshold-proposal-apply.yml` (`workflow_dispatch`)에서 apply 후 release-readiness 재검증 실패 시 `post-apply-revert-summary.json` 생성 + threshold 파일 자동복구 + 워크플로우 실패 처리
+13. local gate artifacts generated:
    - `.tmp/release-readiness/perf-gate-report.json`
    - `.tmp/release-readiness/tuning-gate-report.chapter_1.json`
    - `.tmp/release-readiness/tuning-gate-report.chapter_2.json`
@@ -237,14 +245,16 @@
    - `.tmp/release-readiness/trend-threshold-proposal.json`
    - `.tmp/release-readiness/trend-thresholds.applied.preview.json`
    - `.tmp/release-readiness/trend-threshold-apply-summary.json`
+   - `.tmp/release-readiness/post-apply-verification.json` (workflow_dispatch 실행시)
+   - `.tmp/release-readiness/post-apply-revert-summary.json` (검증 실패시)
 
 ## Remaining Blockers
 
-1. No blocking issue for Batch 11-26 release-gate scope.
-2. apply workflow에서 변경 반영 이후 후속 검증 실패시 자동 revert + 알림 체인이 아직 없음.
+1. No blocking issue for Batch 11-27 release-gate scope.
+2. post-apply 실패 알림이 현재는 workflow summary/annotation 중심이며, 외부 채널(Slack/Teams/webhook) 연동은 아직 없음.
 
 ## Next Parallel Batch Plan
 
-1. Batch 27: apply workflow post-apply 검증 실패 시 자동 revert/알림 워크플로우 추가.
-2. Batch 28: chapter별 adaptive policy drift guardrail(정책 급변 제한/완화율 제한) 추가.
+1. Batch 28: chapter별 adaptive policy drift guardrail(정책 급변 제한/완화율 제한) 추가.
+2. Batch 29: post-apply 실패 알림의 외부 채널(webhook) 연동 확장.
 
