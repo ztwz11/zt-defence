@@ -10,6 +10,7 @@ const {
   DEFAULT_RESULT_OUTPUT_PATH,
   DEFAULT_REVERT_SUMMARY_PATH,
   DEFAULT_VERIFICATION_PATH,
+  buildCorrelationKeys,
   buildChannelRequestBody,
   parseArgs,
   runAlert,
@@ -60,21 +61,55 @@ test('parseArgs supports channel/retry and workflow metadata options', () => {
 test('buildChannelRequestBody creates adapter-specific payloads', () => {
   const payload = {
     event: 'threshold_apply_post_verify_failed',
+    workflowInput: { targetRef: 'main' },
     source: { repository: 'org/repo' },
     failure: { verificationExitCode: 1 },
-    links: { runUrl: 'https://github.com/org/repo/actions/runs/123' },
+    thresholdDiff: { appliedCount: 2, manualReviewCount: 1, blocked: true },
+    links: {
+      runUrl: 'https://github.com/org/repo/actions/runs/123',
+      pullRequestUrl: 'https://github.com/org/repo/pull/99',
+    },
+    correlation: {
+      correlationId: 'corr-1',
+      dedupeKey: 'dedupe-1',
+    },
   };
 
   const slackBody = buildChannelRequestBody('slack', payload);
   assert.ok(typeof slackBody.text === 'string' && slackBody.text.includes('org/repo'));
+  assert.ok(slackBody.fallbackText.includes('dedupe-1'));
   assert.ok(Array.isArray(slackBody.blocks));
+  assert.equal(slackBody.blocks[0].type, 'header');
+  assert.equal(slackBody.blocks[slackBody.blocks.length - 1].type, 'context');
 
   const teamsBody = buildChannelRequestBody('teams', payload);
   assert.equal(teamsBody['@type'], 'MessageCard');
   assert.equal(teamsBody.title, 'Threshold Apply Alert');
+  const factNames = teamsBody.sections[0].facts.map((fact) => fact.name);
+  assert.ok(factNames.includes('Dedupe'));
+  assert.ok(factNames.includes('Correlation'));
 
   const genericBody = buildChannelRequestBody('generic', payload);
   assert.deepEqual(genericBody, payload);
+});
+
+test('buildCorrelationKeys creates stable dedupe and attempt keys', () => {
+  const payload = {
+    event: 'threshold_apply_post_verify_failed',
+    source: {
+      repository: 'Org/Repo',
+      runId: '12345',
+      runAttempt: '2',
+      job: 'apply-threshold-proposal',
+    },
+    failure: {
+      verificationExitCode: 1,
+    },
+  };
+  const keys = buildCorrelationKeys(payload);
+  assert.equal(keys.correlationId, 'threshold-apply-post-verify-failed:org-repo:12345:2:apply-threshold-proposal');
+  assert.equal(keys.dedupeKey, 'threshold-apply-post-verify-failed:org-repo:12345:apply-threshold-proposal:1');
+  assert.equal(keys.attemptKey, 'threshold-apply-post-verify-failed:org-repo:12345:2:apply-threshold-proposal:1');
 });
 
 test('runAlert writes standardized payload and skips send when webhook is missing', async () => {
@@ -171,11 +206,14 @@ test('runAlert writes standardized payload and skips send when webhook is missin
   assert.equal(payload.thresholdDiff.appliedCount, 1);
   assert.equal(payload.thresholdDiff.manualReviewCount, 1);
   assert.equal(payload.thresholdDiff.proposalRebalanceChangedCount, 2);
+  assert.ok(typeof payload.correlation.correlationId === 'string');
+  assert.ok(typeof payload.correlation.dedupeKey === 'string');
   assert.equal(payload.links.pullRequestUrl, 'https://github.com/org/repo/pull/42');
 
   const resultPayload = JSON.parse(writes[resultOutputPath]);
   assert.equal(resultPayload.skipped, true);
   assert.equal(resultPayload.webhookConfigured, false);
+  assert.ok(resultPayload.correlation.dedupeKey.length > 0);
 });
 
 test('runAlert retries and succeeds with teams adapter', async () => {
@@ -214,9 +252,9 @@ test('runAlert retries and succeeds with teams adapter', async () => {
       },
       mkdirSync() {},
       writeFileSync() {},
-      async postJson(url, body) {
+      async postJson(url, body, _timeoutMs, _deps, headers) {
         callCount += 1;
-        posts.push({ url, body });
+        posts.push({ url, body, headers });
         if (callCount === 1) {
           return { ok: false, statusCode: 500, responseText: 'temporary failure' };
         }
@@ -235,4 +273,7 @@ test('runAlert retries and succeeds with teams adapter', async () => {
   assert.deepEqual(sleeps, [10]);
   assert.equal(posts.length, 2);
   assert.equal(posts[0].body['@type'], 'MessageCard');
+  assert.ok(posts[0].headers['x-threshold-alert-dedupe-key']);
+  assert.equal(posts[0].headers['x-threshold-alert-dedupe-key'], posts[1].headers['x-threshold-alert-dedupe-key']);
+  assert.equal(posts[0].headers['x-threshold-alert-correlation-id'], result.correlation.correlationId);
 });

@@ -31,7 +31,13 @@ function toFiniteNumber(value, fallback) {
 }
 
 function normalizeString(value) {
-  return typeof value === 'string' ? value.trim() : '';
+  if (typeof value === 'string') {
+    return value.trim();
+  }
+  if (typeof value === 'number' || typeof value === 'boolean') {
+    return String(value).trim();
+  }
+  return '';
 }
 
 function parseBooleanLike(value, fallback) {
@@ -58,6 +64,18 @@ function truncateText(value, maxLength) {
     return normalized;
   }
   return `${normalized.slice(0, limit)}...`;
+}
+
+function toSlugSegment(value, fallback) {
+  const normalized = normalizeString(value).toLowerCase();
+  if (normalized.length === 0) {
+    return fallback;
+  }
+  const slug = normalized
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+/, '')
+    .replace(/-+$/, '');
+  return slug.length > 0 ? slug : fallback;
 }
 
 function parseArgs(argv) {
@@ -474,20 +492,64 @@ function buildThresholdDiffSummary(proposalSummary, applySummary) {
   const manualReviewChapterIds = Array.isArray(apply.manualReviewChapterIds)
     ? apply.manualReviewChapterIds
     : [];
+  const unchangedChapterIds = Array.isArray(apply.unchangedChapterIds) ? apply.unchangedChapterIds : [];
+  const skippedChapterIds = Array.isArray(apply.skippedChapterIds) ? apply.skippedChapterIds : [];
+  const ignoredActionChapterIds = Array.isArray(apply.ignoredActionChapterIds)
+    ? apply.ignoredActionChapterIds
+    : [];
+  const invalidValueChapterIds = Array.isArray(apply.invalidValueChapterIds)
+    ? apply.invalidValueChapterIds
+    : [];
+  const rowPreview = applyRows.slice(0, 10).map((row) => ({
+    chapterId: normalizeString(row?.chapterId) || null,
+    action: normalizeString(row?.action) || null,
+    current: toFiniteNumber(row?.current, null),
+    proposed: toFiniteNumber(row?.proposed, null),
+    applied: row?.applied === true,
+    reason: normalizeString(row?.reason) || null,
+  }));
 
   return {
     hasProposal: proposal?.hasProposal === true,
     consideredRowCount: toFiniteNumber(apply.consideredRowCount, applyRows.length),
     appliedCount: appliedChapterIds.length,
     appliedChapterIds,
+    unchangedCount: unchangedChapterIds.length,
+    unchangedChapterIds,
+    skippedCount: skippedChapterIds.length,
+    skippedChapterIds,
     manualReviewCount: manualReviewChapterIds.length,
     manualReviewChapterIds,
+    ignoredActionCount: ignoredActionChapterIds.length,
+    ignoredActionChapterIds,
+    invalidValueCount: invalidValueChapterIds.length,
+    invalidValueChapterIds,
     blocked: apply?.blocked === true,
     proposalRebalanceChangedCount: toFiniteNumber(proposal?.rebalance?.changedCount, proposalRows.length),
     proposalManualReviewCount: toFiniteNumber(proposal?.rebalance?.manualReviewCount, 0),
     proposalChangedChapterIds: Array.isArray(proposal?.rebalance?.changedChapterIds)
       ? proposal.rebalance.changedChapterIds
       : [],
+    rowPreview,
+  };
+}
+
+function buildCorrelationKeys(payload) {
+  const source = isPlainObject(payload?.source) ? payload.source : {};
+  const failure = isPlainObject(payload?.failure) ? payload.failure : {};
+  const event = toSlugSegment(payload?.event, 'event');
+  const repository = toSlugSegment(source.repository, 'repo');
+  const runId = toSlugSegment(source.runId, 'run');
+  const runAttempt = toSlugSegment(source.runAttempt, 'attempt');
+  const job = toSlugSegment(source.job, 'job');
+  const verificationExitCode = toSlugSegment(failure.verificationExitCode, 'na');
+  const correlationId = [event, repository, runId, runAttempt, job].join(':');
+  const dedupeKey = [event, repository, runId, job, verificationExitCode].join(':');
+  const attemptKey = [event, repository, runId, runAttempt, job, verificationExitCode].join(':');
+  return {
+    correlationId,
+    dedupeKey,
+    attemptKey,
   };
 }
 
@@ -509,7 +571,7 @@ function buildCanonicalPayload(options, context) {
     ? sourceOptions.verificationExitCode
     : toFiniteNumber(verificationSummary?.exitCode, 1);
 
-  return {
+  const payload = {
     schemaVersion: '1.0.0',
     generatedAt: now(),
     event: sourceOptions.event || DEFAULT_EVENT,
@@ -534,6 +596,7 @@ function buildCanonicalPayload(options, context) {
       phase: 'post_apply_verification',
       step: 'Post-apply release-readiness verification',
       verificationExitCode,
+      summary: `post-apply verification failed (exit=${verificationExitCode})`,
       verification: verificationSummary,
       reverted: revertSummary?.reverted === true,
       revertSummary,
@@ -549,6 +612,8 @@ function buildCanonicalPayload(options, context) {
       resultPath: sourceContext.resultOutputPath || null,
     },
   };
+  payload.correlation = buildCorrelationKeys(payload);
+  return payload;
 }
 
 function buildChannelRequestBody(channel, payload) {
@@ -557,27 +622,91 @@ function buildChannelRequestBody(channel, payload) {
   const repository = sourcePayload?.source?.repository || 'unknown-repository';
   const exitCode = sourcePayload?.failure?.verificationExitCode;
   const runUrl = sourcePayload?.links?.runUrl;
-  const summaryText = `[threshold-apply] post-apply verification failed (${repository}, exit=${exitCode})`;
+  const pullRequestUrl = sourcePayload?.links?.pullRequestUrl;
+  const appliedCount = toFiniteNumber(sourcePayload?.thresholdDiff?.appliedCount, 0);
+  const manualReviewCount = toFiniteNumber(sourcePayload?.thresholdDiff?.manualReviewCount, 0);
+  const blocked = sourcePayload?.thresholdDiff?.blocked === true;
+  const dedupeKey = sourcePayload?.correlation?.dedupeKey || 'n/a';
+  const correlationId = sourcePayload?.correlation?.correlationId || 'n/a';
+  const summaryText = `[threshold-apply] post-apply verification failed (${repository}, exit=${exitCode}, applied=${appliedCount}, manualReview=${manualReviewCount}, blocked=${blocked})`;
+  const fallbackText = `${summaryText} run=${runUrl || 'n/a'} pr=${pullRequestUrl || 'n/a'} dedupe=${dedupeKey}`;
 
   if (selectedChannel === 'slack') {
-    return {
-      text: summaryText,
-      blocks: [
-        {
-          type: 'section',
+    const blocks = [
+      {
+        type: 'header',
+        text: {
+          type: 'plain_text',
+          text: 'Threshold Apply Alert',
+          emoji: false,
+        },
+      },
+      {
+        type: 'section',
+        text: {
+          type: 'mrkdwn',
+          text: `*${summaryText}*`,
+        },
+      },
+      {
+        type: 'section',
+        fields: [
+          { type: 'mrkdwn', text: `*Event*\n${sourcePayload.event || DEFAULT_EVENT}` },
+          { type: 'mrkdwn', text: `*Exit Code*\n${exitCode}` },
+          { type: 'mrkdwn', text: `*Applied*\n${appliedCount}` },
+          { type: 'mrkdwn', text: `*Manual Review*\n${manualReviewCount}` },
+          { type: 'mrkdwn', text: `*Blocked*\n${blocked}` },
+          { type: 'mrkdwn', text: `*Target Ref*\n${sourcePayload?.workflowInput?.targetRef || 'n/a'}` },
+        ],
+      },
+    ];
+    if (runUrl || pullRequestUrl) {
+      const elements = [];
+      if (runUrl) {
+        elements.push({
+          type: 'button',
           text: {
-            type: 'mrkdwn',
-            text: `*Threshold Apply Alert*\n${summaryText}`,
+            type: 'plain_text',
+            text: 'Workflow Run',
+            emoji: false,
           },
+          url: runUrl,
+        });
+      }
+      if (pullRequestUrl) {
+        elements.push({
+          type: 'button',
+          text: {
+            type: 'plain_text',
+            text: 'Pull Request',
+            emoji: false,
+          },
+          url: pullRequestUrl,
+        });
+      }
+      blocks.push({
+        type: 'actions',
+        elements,
+      });
+    }
+    blocks.push({
+      type: 'context',
+      elements: [
+        {
+          type: 'mrkdwn',
+          text: `correlation=${correlationId}`,
         },
         {
-          type: 'section',
-          fields: [
-            { type: 'mrkdwn', text: `*Event*\n${sourcePayload.event || DEFAULT_EVENT}` },
-            { type: 'mrkdwn', text: `*Run*\n${runUrl || 'n/a'}` },
-          ],
+          type: 'mrkdwn',
+          text: `dedupe=${dedupeKey}`,
         },
       ],
+    });
+
+    return {
+      text: fallbackText,
+      fallbackText,
+      blocks,
       payload: sourcePayload,
     };
   }
@@ -587,8 +716,30 @@ function buildChannelRequestBody(channel, payload) {
       { name: 'Repository', value: String(repository) },
       { name: 'Event', value: String(sourcePayload.event || DEFAULT_EVENT) },
       { name: 'Exit Code', value: String(exitCode) },
+      { name: 'Applied', value: String(appliedCount) },
+      { name: 'Manual Review', value: String(manualReviewCount) },
+      { name: 'Blocked', value: String(blocked) },
+      { name: 'Target Ref', value: String(sourcePayload?.workflowInput?.targetRef || 'n/a') },
       { name: 'Run', value: String(runUrl || 'n/a') },
+      { name: 'Pull Request', value: String(pullRequestUrl || 'n/a') },
+      { name: 'Correlation', value: String(correlationId) },
+      { name: 'Dedupe', value: String(dedupeKey) },
     ];
+    const potentialAction = [];
+    if (runUrl) {
+      potentialAction.push({
+        '@type': 'OpenUri',
+        name: 'View Workflow Run',
+        targets: [{ os: 'default', uri: runUrl }],
+      });
+    }
+    if (pullRequestUrl) {
+      potentialAction.push({
+        '@type': 'OpenUri',
+        name: 'View Pull Request',
+        targets: [{ os: 'default', uri: pullRequestUrl }],
+      });
+    }
     return {
       '@type': 'MessageCard',
       '@context': 'http://schema.org/extensions',
@@ -599,18 +750,10 @@ function buildChannelRequestBody(channel, payload) {
         {
           activityTitle: summaryText,
           facts,
-          text: 'post-apply verification failed and threshold auto-revert was triggered.',
+          text: `post-apply verification failed and threshold auto-revert was triggered. dedupe=${dedupeKey}`,
         },
       ],
-      potentialAction: runUrl
-        ? [
-            {
-              '@type': 'OpenUri',
-              name: 'View Workflow Run',
-              targets: [{ os: 'default', uri: runUrl }],
-            },
-          ]
-        : [],
+      potentialAction,
       payload: sourcePayload,
     };
   }
@@ -618,7 +761,7 @@ function buildChannelRequestBody(channel, payload) {
   return sourcePayload;
 }
 
-async function defaultPostJson(url, body, timeoutMs, dependencies) {
+async function defaultPostJson(url, body, timeoutMs, dependencies, requestHeaders) {
   const deps = isPlainObject(dependencies) ? dependencies : {};
   const fetchImpl = typeof deps.fetch === 'function' ? deps.fetch : globalThis.fetch;
   if (typeof fetchImpl !== 'function') {
@@ -632,12 +775,27 @@ async function defaultPostJson(url, body, timeoutMs, dependencies) {
     timer.unref();
   }
 
+  const headers = {
+    'content-type': 'application/json',
+  };
+  if (isPlainObject(requestHeaders)) {
+    for (const [key, value] of Object.entries(requestHeaders)) {
+      const normalizedKey = normalizeString(key).toLowerCase();
+      if (normalizedKey.length === 0) {
+        continue;
+      }
+      const normalizedValue = normalizeString(value);
+      if (normalizedValue.length === 0) {
+        continue;
+      }
+      headers[normalizedKey] = normalizedValue;
+    }
+  }
+
   try {
     const response = await fetchImpl(String(url), {
       method: 'POST',
-      headers: {
-        'content-type': 'application/json',
-      },
+      headers,
       body: JSON.stringify(body),
       signal: controller.signal,
     });
@@ -656,7 +814,7 @@ async function defaultSleep(ms) {
   await new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function sendWithRetry(webhookUrl, requestBody, options, dependencies) {
+async function sendWithRetry(webhookUrl, requestBody, requestHeaders, options, dependencies) {
   const deps = isPlainObject(dependencies) ? dependencies : {};
   const sourceOptions = isPlainObject(options) ? options : {};
   const retryCount = Math.max(0, Math.floor(toFiniteNumber(sourceOptions.retryCount, DEFAULT_RETRY_COUNT)));
@@ -673,7 +831,7 @@ async function sendWithRetry(webhookUrl, requestBody, options, dependencies) {
 
   for (let attempt = 1; attempt <= maxAttempt; attempt += 1) {
     try {
-      const response = await postJson(webhookUrl, requestBody, timeoutMs, deps);
+      const response = await postJson(webhookUrl, requestBody, timeoutMs, deps, requestHeaders);
       const attemptEntry = {
         attempt,
         ok: response?.ok === true,
@@ -724,7 +882,8 @@ function createSummaryLine(result) {
   const source = isPlainObject(result) ? result : {};
   const status = source.sent ? 'PASS' : source.skipped ? 'SKIP' : 'FAIL';
   const attempts = Array.isArray(source.attempts) ? source.attempts.length : 0;
-  return `${SUMMARY_PREFIX} ${status} channel=${source.channel || DEFAULT_CHANNEL} attempts=${attempts} sent=${source.sent === true}`;
+  const dedupeKey = source?.correlation?.dedupeKey || 'n/a';
+  return `${SUMMARY_PREFIX} ${status} channel=${source.channel || DEFAULT_CHANNEL} attempts=${attempts} sent=${source.sent === true} dedupe=${dedupeKey}`;
 }
 
 async function runAlert(options, dependencies) {
@@ -765,6 +924,12 @@ async function runAlert(options, dependencies) {
   });
 
   writeJsonFile(resolvedPayloadOutputPath, payload, deps);
+  const requestHeaders = {
+    'x-threshold-alert-event': sourceOptions.event || DEFAULT_EVENT,
+    'x-threshold-alert-correlation-id': payload?.correlation?.correlationId,
+    'x-threshold-alert-dedupe-key': payload?.correlation?.dedupeKey,
+    'x-threshold-alert-attempt-key': payload?.correlation?.attemptKey,
+  };
 
   const webhookUrl = normalizeString(sourceOptions.webhookUrl);
   if (webhookUrl.length === 0) {
@@ -780,6 +945,7 @@ async function runAlert(options, dependencies) {
       statusCode: null,
       responsePreview: '',
       error: skipped ? null : 'Webhook URL is required but missing.',
+      correlation: payload?.correlation || null,
       payloadPath: resolvedPayloadOutputPath,
       resultPath: resolvedResultOutputPath,
     };
@@ -795,6 +961,7 @@ async function runAlert(options, dependencies) {
   const sendResult = await sendWithRetry(
     webhookUrl,
     channelBody,
+    requestHeaders,
     {
       retryCount: sourceOptions.retryCount,
       retryBackoffMs: sourceOptions.retryBackoffMs,
@@ -815,6 +982,7 @@ async function runAlert(options, dependencies) {
     statusCode: sendResult.statusCode,
     responsePreview: sendResult.responsePreview,
     error: sendResult.error,
+    correlation: payload?.correlation || null,
     payloadPath: resolvedPayloadOutputPath,
     resultPath: resolvedResultOutputPath,
   };
@@ -883,6 +1051,7 @@ module.exports = {
   DEFAULT_RESULT_OUTPUT_PATH,
   parseArgs,
   buildThresholdDiffSummary,
+  buildCorrelationKeys,
   buildCanonicalPayload,
   buildChannelRequestBody,
   sendWithRetry,
