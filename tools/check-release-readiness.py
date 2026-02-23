@@ -121,6 +121,7 @@ def build_checks(chapter_ids: list[str], allow_missing_baseline: bool) -> list[t
                 "tools/release-readiness/build-adaptive-rebalance-policy.js",
                 "--history-dir=.tmp/release-readiness/history",
                 "--thresholds=tools/release-readiness/trend-thresholds.json",
+                "--previous-policy=.tmp/release-readiness/adaptive-rebalance-policy.prev.json",
                 "--seed-report=.tmp/release-readiness/trend-diff-report.json",
                 "--output=.tmp/release-readiness/adaptive-rebalance-policy.json",
                 "--min-samples=3",

@@ -6,6 +6,7 @@ const assert = require('node:assert/strict');
 const {
   DEFAULT_HISTORY_DIR,
   DEFAULT_OUTPUT_PATH,
+  DEFAULT_PREVIOUS_POLICY_PATH,
   DEFAULT_THRESHOLDS_PATH,
   buildAdaptiveRebalancePolicy,
   parseArgs,
@@ -80,9 +81,13 @@ test('parseArgs supports history and seed report options', () => {
     '--history-dir=.tmp/release-readiness/history-pr',
     '--thresholds=tools/release-readiness/custom-thresholds.json',
     '--output=.tmp/release-readiness/adaptive-policy.custom.json',
+    '--previous-policy=.tmp/release-readiness/adaptive-policy.prev.custom.json',
     '--seed-report=.tmp/release-readiness/trend-diff-report.json',
     '--seed-report=.tmp/release-readiness/trend-diff-report.pr.json',
     '--min-samples=5',
+    '--max-tighten-margin-step=0.015',
+    '--max-relax-margin-step=0.025',
+    '--max-tighten-rate-step=0.05',
   ]);
 
   assert.deepEqual(parsed, {
@@ -90,6 +95,7 @@ test('parseArgs supports history and seed report options', () => {
     historyDir: '.tmp/release-readiness/history-pr',
     thresholdsPath: 'tools/release-readiness/custom-thresholds.json',
     outputPath: '.tmp/release-readiness/adaptive-policy.custom.json',
+    previousPolicyPath: '.tmp/release-readiness/adaptive-policy.prev.custom.json',
     seedReportPaths: [
       '.tmp/release-readiness/trend-diff-report.json',
       '.tmp/release-readiness/trend-diff-report.pr.json',
@@ -102,6 +108,9 @@ test('parseArgs supports history and seed report options', () => {
       maxRelaxMargin: 0.5,
       minTightenRate: 0.15,
       maxTightenRate: 0.8,
+      maxTightenMarginStep: 0.015,
+      maxRelaxMarginStep: 0.025,
+      maxTightenRateStep: 0.05,
     },
   });
 });
@@ -110,13 +119,34 @@ test('buildAdaptiveRebalancePolicy derives chapter policies from historical tren
   const historyDir = 'C:/repo/.tmp/release-readiness/history';
   const thresholdsPath = 'C:/repo/tools/release-readiness/trend-thresholds.json';
   const outputPath = 'C:/repo/.tmp/release-readiness/adaptive-rebalance-policy.json';
+  const previousPolicyPath = 'C:/repo/.tmp/release-readiness/adaptive-rebalance-policy.prev.json';
   const seedReportPath = 'C:/repo/.tmp/release-readiness/trend-diff-report.current.json';
   const writes = {};
+  const previousPolicyPayload = {
+    version: '1.0.0',
+    chapters: {
+      chapter_1: {
+        policy: {
+          tightenMargin: 0.01,
+          tightenRate: 0.8,
+          relaxMargin: 0.5,
+        },
+      },
+      chapter_2: {
+        policy: {
+          tightenMargin: 0.2,
+          tightenRate: 0.15,
+          relaxMargin: 0.02,
+        },
+      },
+    },
+  };
   const fileMap = {
     [thresholdsPath]: JSON.stringify(createThresholds()),
     [`${historyDir}/trend-diff-report.pr-001.json`]: JSON.stringify(createTrendReport(0.12, 0.28, false)),
     [`${historyDir}/trend-diff-report.pr-002.json`]: JSON.stringify(createTrendReport(0.08, 0.33, true)),
     [seedReportPath]: JSON.stringify(createTrendReport(0.1, 0.3, false)),
+    [previousPolicyPath]: JSON.stringify(previousPolicyPayload),
   };
 
   const result = buildAdaptiveRebalancePolicy(
@@ -124,6 +154,7 @@ test('buildAdaptiveRebalancePolicy derives chapter policies from historical tren
       historyDir: DEFAULT_HISTORY_DIR,
       thresholdsPath: DEFAULT_THRESHOLDS_PATH,
       outputPath: DEFAULT_OUTPUT_PATH,
+      previousPolicyPath: DEFAULT_PREVIOUS_POLICY_PATH,
       seedReportPaths: [seedReportPath],
       options: {
         minSamples: 2,
@@ -133,6 +164,9 @@ test('buildAdaptiveRebalancePolicy derives chapter policies from historical tren
         maxRelaxMargin: 0.5,
         minTightenRate: 0.15,
         maxTightenRate: 0.8,
+        maxTightenMarginStep: 0.02,
+        maxRelaxMarginStep: 0.03,
+        maxTightenRateStep: 0.08,
       },
     },
     {
@@ -148,6 +182,9 @@ test('buildAdaptiveRebalancePolicy derives chapter policies from historical tren
         }
         if (targetPath === DEFAULT_OUTPUT_PATH) {
           return outputPath;
+        }
+        if (targetPath === DEFAULT_PREVIOUS_POLICY_PATH) {
+          return previousPolicyPath;
         }
         if (/^[A-Za-z]:[\\/]/.test(targetPath)) {
           return String(targetPath).replaceAll('\\', '/');
@@ -190,9 +227,113 @@ test('buildAdaptiveRebalancePolicy derives chapter policies from historical tren
 
   assert.equal(result.reportCount, 3);
   assert.deepEqual(result.activeChapterIds, ['chapter_1', 'chapter_2']);
+  assert.equal(result.previousPolicyPath, previousPolicyPath);
   assert.equal(result.chapters.chapter_1.sampleCount, 3);
   assert.equal(result.chapters.chapter_2.sampleCount, 3);
-  assert.ok(result.chapters.chapter_2.policy.relaxMargin > result.chapters.chapter_1.policy.relaxMargin);
-  assert.ok(result.chapters.chapter_2.policy.tightenRate < result.chapters.chapter_1.policy.tightenRate);
+  assert.ok(
+    result.chapters.chapter_2.guardrail.candidatePolicy.relaxMargin >
+      result.chapters.chapter_1.guardrail.candidatePolicy.relaxMargin
+  );
+  assert.ok(
+    result.chapters.chapter_2.guardrail.candidatePolicy.tightenRate <
+      result.chapters.chapter_1.guardrail.candidatePolicy.tightenRate
+  );
+  assert.equal(result.chapters.chapter_1.guardrail.applied, true);
+  assert.equal(result.chapters.chapter_2.guardrail.applied, true);
+  assert.equal(result.chapters.chapter_1.guardrail.changed, true);
+  assert.equal(result.chapters.chapter_2.guardrail.changed, true);
+  assert.ok(result.guardrailLimitedChapterIds.includes('chapter_1'));
+  assert.ok(result.guardrailLimitedChapterIds.includes('chapter_2'));
+  assert.ok(
+    Math.abs(result.chapters.chapter_1.policy.tightenMargin - previousPolicyPayload.chapters.chapter_1.policy.tightenMargin) <=
+      0.02 + 0.000001
+  );
+  assert.ok(
+    Math.abs(result.chapters.chapter_1.policy.tightenRate - previousPolicyPayload.chapters.chapter_1.policy.tightenRate) <=
+      0.08 + 0.000001
+  );
+  assert.ok(
+    Math.abs(result.chapters.chapter_1.policy.relaxMargin - previousPolicyPayload.chapters.chapter_1.policy.relaxMargin) <=
+      0.03 + 0.000001
+  );
   assert.ok(Object.prototype.hasOwnProperty.call(writes, outputPath));
+});
+
+test('buildAdaptiveRebalancePolicy skips guardrail when previous policy file is missing', () => {
+  const historyDir = 'C:/repo/.tmp/release-readiness/history';
+  const thresholdsPath = 'C:/repo/tools/release-readiness/trend-thresholds.json';
+  const outputPath = 'C:/repo/.tmp/release-readiness/adaptive-rebalance-policy.json';
+  const seedReportPath = 'C:/repo/.tmp/release-readiness/trend-diff-report.current.json';
+  const fileMap = {
+    [thresholdsPath]: JSON.stringify(createThresholds()),
+    [seedReportPath]: JSON.stringify(createTrendReport(0.1, 0.2, false)),
+  };
+
+  const result = buildAdaptiveRebalancePolicy(
+    {
+      historyDir: DEFAULT_HISTORY_DIR,
+      thresholdsPath: DEFAULT_THRESHOLDS_PATH,
+      outputPath: DEFAULT_OUTPUT_PATH,
+      previousPolicyPath: DEFAULT_PREVIOUS_POLICY_PATH,
+      seedReportPaths: [seedReportPath],
+      options: {
+        minSamples: 1,
+        minTightenMargin: 0.01,
+        maxTightenMargin: 0.2,
+        minRelaxMargin: 0.02,
+        maxRelaxMargin: 0.5,
+        minTightenRate: 0.15,
+        maxTightenRate: 0.8,
+        maxTightenMarginStep: 0.02,
+        maxRelaxMarginStep: 0.03,
+        maxTightenRateStep: 0.08,
+      },
+    },
+    {
+      cwd() {
+        return 'C:/repo';
+      },
+      resolvePath(cwd, targetPath) {
+        if (targetPath === DEFAULT_HISTORY_DIR) {
+          return historyDir;
+        }
+        if (targetPath === DEFAULT_THRESHOLDS_PATH) {
+          return thresholdsPath;
+        }
+        if (targetPath === DEFAULT_OUTPUT_PATH) {
+          return outputPath;
+        }
+        if (/^[A-Za-z]:[\\/]/.test(targetPath)) {
+          return String(targetPath).replaceAll('\\', '/');
+        }
+        return `${cwd}/${String(targetPath).replaceAll('\\', '/')}`;
+      },
+      joinPath(a, b) {
+        return `${String(a).replaceAll('\\', '/')}/${String(b).replaceAll('\\', '/')}`;
+      },
+      existsSync(filePath) {
+        const normalized = String(filePath).replaceAll('\\', '/');
+        return normalized === historyDir || Object.prototype.hasOwnProperty.call(fileMap, normalized);
+      },
+      readdirSync() {
+        return [];
+      },
+      dirname(filePath) {
+        return String(filePath).replaceAll('\\', '/').split('/').slice(0, -1).join('/');
+      },
+      mkdirSync() {},
+      readFileSync(filePath) {
+        const normalized = String(filePath).replaceAll('\\', '/');
+        if (!Object.prototype.hasOwnProperty.call(fileMap, normalized)) {
+          throw new Error(`Unexpected read: ${normalized}`);
+        }
+        return fileMap[normalized];
+      },
+      writeFileSync() {},
+    }
+  );
+
+  assert.deepEqual(result.guardrailLimitedChapterIds, []);
+  assert.equal(result.chapters.chapter_1.guardrail.applied, false);
+  assert.equal(result.chapters.chapter_1.guardrail.reason, 'no_previous_policy');
 });

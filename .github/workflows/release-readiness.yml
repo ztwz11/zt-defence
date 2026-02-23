@@ -73,6 +73,25 @@ PY
           popd >/dev/null
           git worktree remove --force .tmp/release-readiness/base-worktree
 
+      - name: Prepare previous adaptive policy snapshot (PR only)
+        if: github.event_name == 'pull_request'
+        run: |
+          set -euo pipefail
+          mkdir -p .tmp/release-readiness/history
+          rm -f .tmp/release-readiness/adaptive-rebalance-policy.prev.json
+
+          PREVIOUS_POLICY="$(ls -1t .tmp/release-readiness/history/adaptive-rebalance-policy.pr-${{ github.event.pull_request.number }}.*.json 2>/dev/null | head -n 1 || true)"
+          if [ -z "${PREVIOUS_POLICY}" ]; then
+            PREVIOUS_POLICY="$(ls -1t .tmp/release-readiness/history/adaptive-rebalance-policy.*.json 2>/dev/null | head -n 1 || true)"
+          fi
+
+          if [ -n "${PREVIOUS_POLICY}" ] && [ -f "${PREVIOUS_POLICY}" ]; then
+            cp "${PREVIOUS_POLICY}" .tmp/release-readiness/adaptive-rebalance-policy.prev.json
+            echo "Restored previous adaptive policy: ${PREVIOUS_POLICY}"
+          else
+            echo "No previous adaptive policy in cache; drift guardrail will run without previous baseline."
+          fi
+
       - name: Run full release-readiness checks
         env:
           RELEASE_READINESS_REQUIRE_BASELINE: ${{ github.event_name == 'pull_request' && '1' || '0' }}
@@ -85,6 +104,9 @@ PY
           mkdir -p .tmp/release-readiness/history
           if [ -f .tmp/release-readiness/trend-diff-report.json ]; then
             cp .tmp/release-readiness/trend-diff-report.json ".tmp/release-readiness/history/trend-diff-report.pr-${{ github.event.pull_request.number }}.run-${{ github.run_id }}.${{ github.sha }}.json"
+          fi
+          if [ -f .tmp/release-readiness/adaptive-rebalance-policy.json ]; then
+            cp .tmp/release-readiness/adaptive-rebalance-policy.json ".tmp/release-readiness/history/adaptive-rebalance-policy.pr-${{ github.event.pull_request.number }}.run-${{ github.run_id }}.${{ github.sha }}.json"
           fi
 
       - name: Save PR trend history cache

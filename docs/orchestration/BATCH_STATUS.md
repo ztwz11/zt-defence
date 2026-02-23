@@ -217,6 +217,13 @@
 | BD threshold apply post-verify hard gate | codex-main | Completed | `.github/workflows/threshold-proposal-apply.yml` | apply 후 `python tools/check-release-readiness.py` 재검증, 실패시 워크플로우 실패 처리 |
 | BE auto-revert + notification summary | codex-main | Completed | `.github/workflows/threshold-proposal-apply.yml` | 실패시 threshold 파일 백업본 자동 복구 + `GITHUB_STEP_SUMMARY`/error annotation + revert summary artifact 생성 |
 
+## Batch 28 Completion (adaptive policy drift guardrail + previous-policy continuity)
+
+| Module | Owner | Status | Owned Paths | Checks |
+| --- | --- | --- | --- | --- |
+| BF chapter policy drift guardrail | codex-main | Completed | `tools/release-readiness/build-adaptive-rebalance-policy.js`, `tests/perf/build-adaptive-rebalance-policy.test.js` | chapter별 정책을 이전 adaptive policy와 비교해 step-limit 적용 + `guardrail` 메타/`guardrailLimitedChapterIds` 생성 |
+| BG previous policy restore/archive wiring | codex-main | Completed | `tools/check-release-readiness.py`, `.github/workflows/release-readiness.yml` | `--previous-policy` 경로를 release check에 고정 연결 + PR 캐시에서 직전 adaptive policy 복원/신규 정책 아카이브 |
+
 ## Current Gate Snapshot
 
 1. `node tools/perf/run-and-check.js --profile=ci-mobile-baseline --iterations=200 --output=.tmp/release-readiness/perf-gate-report.json` -> `PASS`
@@ -225,7 +232,7 @@
 4. `node tools/balance/run-tuning-gate.js --chapter=chapter_3 --output=.tmp/release-readiness/tuning-gate-report.chapter_3.json --top-candidates=10` -> `PASS` (`score=2.423182`)
 5. `node tools/release-readiness/check-trend-diff.js --current-dir=.tmp/release-readiness --baseline-dir=.tmp/release-readiness/baseline --allow-missing-baseline --output=.tmp/release-readiness/trend-diff-report.json` -> `PASS` (baseline missing이면 skip)
 6. `python tools/check-release-readiness.py` -> `PASS` (chapter discovery: `chapter_1`, `chapter_2`, `chapter_3`)
-7. `node tools/release-readiness/build-adaptive-rebalance-policy.js --history-dir=.tmp/release-readiness/history --thresholds=tools/release-readiness/trend-thresholds.json --seed-report=.tmp/release-readiness/trend-diff-report.json --output=.tmp/release-readiness/adaptive-rebalance-policy.json --min-samples=3` -> `PASS` (adaptive policy artifact generated)
+7. `node tools/release-readiness/build-adaptive-rebalance-policy.js --history-dir=.tmp/release-readiness/history --thresholds=tools/release-readiness/trend-thresholds.json --previous-policy=.tmp/release-readiness/adaptive-rebalance-policy.prev.json --seed-report=.tmp/release-readiness/trend-diff-report.json --output=.tmp/release-readiness/adaptive-rebalance-policy.json --min-samples=3` -> `PASS` (adaptive policy + drift guardrail artifact generated)
 8. `node tools/release-readiness/sync-trend-thresholds.js --report=.tmp/release-readiness/trend-diff-report.json --thresholds=tools/release-readiness/trend-thresholds.json --all-chapters --lock-baseline --output=.tmp/release-readiness/trend-thresholds.synced.preview.json --summary-output=.tmp/release-readiness/trend-threshold-sync-summary.json` -> `PASS` (sync preview + summary generated)
 9. `node tools/release-readiness/rebalance-trend-thresholds.js --report=.tmp/release-readiness/trend-diff-report.json --thresholds=tools/release-readiness/trend-thresholds.json --adaptive-policy=.tmp/release-readiness/adaptive-rebalance-policy.json --output=.tmp/release-readiness/trend-threshold-recommendation.json` -> `PASS` (adaptive policy 연동 drift threshold recommendation generated)
 10. `node tools/release-readiness/build-threshold-proposal-comment.js --trend-report=.tmp/release-readiness/trend-diff-report.json --sync-summary=.tmp/release-readiness/trend-threshold-sync-summary.json --rebalance-report=.tmp/release-readiness/trend-threshold-recommendation.json --output=.tmp/release-readiness/trend-threshold-proposal-comment.md --output-json=.tmp/release-readiness/trend-threshold-proposal.json` -> `PASS` (PR 코멘트용 proposal artifact generated)
@@ -237,6 +244,7 @@
    - `.tmp/release-readiness/tuning-gate-report.chapter_2.json`
    - `.tmp/release-readiness/tuning-gate-report.chapter_3.json`
    - `.tmp/release-readiness/trend-diff-report.json`
+   - `.tmp/release-readiness/adaptive-rebalance-policy.prev.json` (존재 시)
    - `.tmp/release-readiness/adaptive-rebalance-policy.json`
    - `.tmp/release-readiness/trend-thresholds.synced.preview.json`
    - `.tmp/release-readiness/trend-threshold-sync-summary.json`
@@ -250,11 +258,11 @@
 
 ## Remaining Blockers
 
-1. No blocking issue for Batch 11-27 release-gate scope.
+1. No blocking issue for Batch 11-28 release-gate scope.
 2. post-apply 실패 알림이 현재는 workflow summary/annotation 중심이며, 외부 채널(Slack/Teams/webhook) 연동은 아직 없음.
 
 ## Next Parallel Batch Plan
 
-1. Batch 28: chapter별 adaptive policy drift guardrail(정책 급변 제한/완화율 제한) 추가.
-2. Batch 29: post-apply 실패 알림의 외부 채널(webhook) 연동 확장.
+1. Batch 29: post-apply 실패 알림의 외부 채널(webhook) 연동 확장.
+2. Batch 30: external alert payload 표준화(요약/아티팩트 링크/재실행 가이드) 및 재시도 정책 정교화.
 

@@ -10,6 +10,7 @@ const SUMMARY_PREFIX = '[adaptive-rebalance-policy]';
 const DEFAULT_HISTORY_DIR = '.tmp/release-readiness/history';
 const DEFAULT_THRESHOLDS_PATH = path.join(__dirname, 'trend-thresholds.json');
 const DEFAULT_OUTPUT_PATH = '.tmp/release-readiness/adaptive-rebalance-policy.json';
+const DEFAULT_PREVIOUS_POLICY_PATH = '.tmp/release-readiness/adaptive-rebalance-policy.prev.json';
 const TREND_REPORT_FILENAME_RE = /^trend-diff-report.*\.json$/i;
 const DEFAULT_POLICY = {
   minScoreIncreaseMax: 0.05,
@@ -26,6 +27,9 @@ const DEFAULT_OPTIONS = {
   maxRelaxMargin: 0.5,
   minTightenRate: 0.15,
   maxTightenRate: 0.8,
+  maxTightenMarginStep: 0.02,
+  maxRelaxMarginStep: 0.03,
+  maxTightenRateStep: 0.08,
 };
 
 function isPlainObject(value) {
@@ -58,6 +62,7 @@ function parseArgs(argv) {
     historyDir: DEFAULT_HISTORY_DIR,
     thresholdsPath: DEFAULT_THRESHOLDS_PATH,
     outputPath: DEFAULT_OUTPUT_PATH,
+    previousPolicyPath: DEFAULT_PREVIOUS_POLICY_PATH,
     seedReportPaths: [],
     options: {
       ...DEFAULT_OPTIONS,
@@ -102,6 +107,16 @@ function parseArgs(argv) {
       continue;
     }
 
+    if (token.startsWith('--previous-policy=')) {
+      parsed.previousPolicyPath = token.slice('--previous-policy='.length).trim();
+      continue;
+    }
+    if (token === '--previous-policy') {
+      parsed.previousPolicyPath = String(args[index + 1] || '').trim();
+      index += 1;
+      continue;
+    }
+
     if (token.startsWith('--seed-report=')) {
       const value = token.slice('--seed-report='.length).trim();
       if (value.length > 0) {
@@ -131,6 +146,54 @@ function parseArgs(argv) {
       continue;
     }
 
+    if (token.startsWith('--max-tighten-margin-step=')) {
+      parsed.options.maxTightenMarginStep = toFiniteNumber(
+        token.slice('--max-tighten-margin-step='.length),
+        parsed.options.maxTightenMarginStep
+      );
+      continue;
+    }
+    if (token === '--max-tighten-margin-step') {
+      parsed.options.maxTightenMarginStep = toFiniteNumber(
+        args[index + 1],
+        parsed.options.maxTightenMarginStep
+      );
+      index += 1;
+      continue;
+    }
+
+    if (token.startsWith('--max-relax-margin-step=')) {
+      parsed.options.maxRelaxMarginStep = toFiniteNumber(
+        token.slice('--max-relax-margin-step='.length),
+        parsed.options.maxRelaxMarginStep
+      );
+      continue;
+    }
+    if (token === '--max-relax-margin-step') {
+      parsed.options.maxRelaxMarginStep = toFiniteNumber(
+        args[index + 1],
+        parsed.options.maxRelaxMarginStep
+      );
+      index += 1;
+      continue;
+    }
+
+    if (token.startsWith('--max-tighten-rate-step=')) {
+      parsed.options.maxTightenRateStep = toFiniteNumber(
+        token.slice('--max-tighten-rate-step='.length),
+        parsed.options.maxTightenRateStep
+      );
+      continue;
+    }
+    if (token === '--max-tighten-rate-step') {
+      parsed.options.maxTightenRateStep = toFiniteNumber(
+        args[index + 1],
+        parsed.options.maxTightenRateStep
+      );
+      index += 1;
+      continue;
+    }
+
     throw new Error(`Unknown argument: ${token}`);
   }
 
@@ -143,8 +206,20 @@ function parseArgs(argv) {
   if (parsed.outputPath.length === 0) {
     throw new Error('Invalid --output value. Expected a non-empty path.');
   }
+  if (parsed.previousPolicyPath.length === 0) {
+    throw new Error('Invalid --previous-policy value. Expected a non-empty path.');
+  }
   if (!Number.isFinite(parsed.options.minSamples) || parsed.options.minSamples < 1) {
     throw new Error('Invalid --min-samples value. Expected an integer >= 1.');
+  }
+  if (parsed.options.maxTightenMarginStep < 0) {
+    throw new Error('Invalid --max-tighten-margin-step value. Expected a non-negative number.');
+  }
+  if (parsed.options.maxRelaxMarginStep < 0) {
+    throw new Error('Invalid --max-relax-margin-step value. Expected a non-negative number.');
+  }
+  if (parsed.options.maxTightenRateStep < 0) {
+    throw new Error('Invalid --max-tighten-rate-step value. Expected a non-negative number.');
   }
   parsed.options.minSamples = Math.max(1, Math.floor(parsed.options.minSamples));
   parsed.seedReportPaths = Array.from(new Set(parsed.seedReportPaths));
@@ -160,8 +235,12 @@ function printHelp() {
     `  --history-dir=<path>   Historical trend report directory (default: ${DEFAULT_HISTORY_DIR})`,
     `  --thresholds=<path>    Thresholds path for chapter score caps (default: ${DEFAULT_THRESHOLDS_PATH})`,
     `  --output=<path>        Adaptive policy output path (default: ${DEFAULT_OUTPUT_PATH})`,
+    `  --previous-policy=<path> Previous adaptive policy path for drift guardrail (default: ${DEFAULT_PREVIOUS_POLICY_PATH})`,
     '  --seed-report=<path>   Additional trend-diff report to include (repeatable)',
     `  --min-samples=<int>    Minimum samples per chapter to activate adaptive policy (default: ${DEFAULT_OPTIONS.minSamples})`,
+    `  --max-tighten-margin-step=<num> Max per-run tightenMargin change (default: ${DEFAULT_OPTIONS.maxTightenMarginStep})`,
+    `  --max-relax-margin-step=<num> Max per-run relaxMargin change (default: ${DEFAULT_OPTIONS.maxRelaxMarginStep})`,
+    `  --max-tighten-rate-step=<num> Max per-run tightenRate change (default: ${DEFAULT_OPTIONS.maxTightenRateStep})`,
     '  --help                 Show this help message',
   ];
   process.stdout.write(`${lines.join('\n')}\n`);
@@ -215,6 +294,15 @@ function writeJsonFile(filePath, payload, dependencies) {
 
   mkdirSync(dirname(filePath), { recursive: true });
   writeFileSync(filePath, `${JSON.stringify(payload, null, 2)}\n`);
+}
+
+function readOptionalJsonFile(filePath, description, dependencies) {
+  const deps = isPlainObject(dependencies) ? dependencies : {};
+  const existsSync = typeof deps.existsSync === 'function' ? deps.existsSync : fs.existsSync;
+  if (!existsSync(filePath)) {
+    return null;
+  }
+  return readJsonFile(filePath, description, deps);
 }
 
 function discoverTrendReportPaths(historyDirPath, dependencies) {
@@ -346,6 +434,99 @@ function buildAdaptiveChapterPolicy(chapterId, chapterHistory, chapterThreshold,
   };
 }
 
+function resolvePreviousChapterPolicy(previousPolicyPayload, chapterId) {
+  const chapterPolicy = previousPolicyPayload?.chapters?.[chapterId]?.policy;
+  return isPlainObject(chapterPolicy) ? chapterPolicy : null;
+}
+
+function clampPolicyStep(currentValue, previousValue, maxStep) {
+  const current = toFiniteNumber(currentValue, NaN);
+  const previous = toFiniteNumber(previousValue, NaN);
+  if (!Number.isFinite(current) || !Number.isFinite(previous) || !Number.isFinite(maxStep) || maxStep < 0) {
+    return currentValue;
+  }
+  if (Math.abs(current - previous) <= maxStep) {
+    return current;
+  }
+  return previous + Math.sign(current - previous) * maxStep;
+}
+
+function applyChapterPolicyDriftGuardrail(chapterPolicy, previousChapterPolicy, options) {
+  const policy = isPlainObject(chapterPolicy) ? chapterPolicy : {};
+  const previous = isPlainObject(previousChapterPolicy) ? previousChapterPolicy : null;
+  const normalized = {
+    tightenMargin: toFiniteNumber(policy.tightenMargin, DEFAULT_POLICY.tightenMargin),
+    tightenRate: toFiniteNumber(policy.tightenRate, DEFAULT_POLICY.tightenRate),
+    relaxMargin: toFiniteNumber(policy.relaxMargin, DEFAULT_POLICY.relaxMargin),
+  };
+
+  if (!previous) {
+    return {
+      policy: {
+        tightenMargin: roundTo(normalized.tightenMargin, 6),
+        tightenRate: roundTo(normalized.tightenRate, 6),
+        relaxMargin: roundTo(normalized.relaxMargin, 6),
+      },
+      guardrail: {
+        applied: false,
+        reason: 'no_previous_policy',
+        changed: false,
+      },
+    };
+  }
+
+  const guarded = {
+    tightenMargin: clampPolicyStep(
+      normalized.tightenMargin,
+      previous.tightenMargin,
+      options.maxTightenMarginStep
+    ),
+    tightenRate: clampPolicyStep(
+      normalized.tightenRate,
+      previous.tightenRate,
+      options.maxTightenRateStep
+    ),
+    relaxMargin: clampPolicyStep(
+      normalized.relaxMargin,
+      previous.relaxMargin,
+      options.maxRelaxMarginStep
+    ),
+  };
+
+  const changed =
+    Math.abs(guarded.tightenMargin - normalized.tightenMargin) > 0.000001 ||
+    Math.abs(guarded.tightenRate - normalized.tightenRate) > 0.000001 ||
+    Math.abs(guarded.relaxMargin - normalized.relaxMargin) > 0.000001;
+
+  return {
+    policy: {
+      tightenMargin: roundTo(guarded.tightenMargin, 6),
+      tightenRate: roundTo(guarded.tightenRate, 6),
+      relaxMargin: roundTo(guarded.relaxMargin, 6),
+    },
+    guardrail: {
+      applied: true,
+      reason: changed ? 'step_limited' : 'within_step_limit',
+      changed,
+      previousPolicy: {
+        tightenMargin: roundTo(previous.tightenMargin, 6),
+        tightenRate: roundTo(previous.tightenRate, 6),
+        relaxMargin: roundTo(previous.relaxMargin, 6),
+      },
+      candidatePolicy: {
+        tightenMargin: roundTo(normalized.tightenMargin, 6),
+        tightenRate: roundTo(normalized.tightenRate, 6),
+        relaxMargin: roundTo(normalized.relaxMargin, 6),
+      },
+      maxStep: {
+        tightenMargin: roundTo(options.maxTightenMarginStep, 6),
+        tightenRate: roundTo(options.maxTightenRateStep, 6),
+        relaxMargin: roundTo(options.maxRelaxMarginStep, 6),
+      },
+    },
+  };
+}
+
 function createSummaryLine(result) {
   const source = isPlainObject(result) ? result : {};
   const chapterCount = Array.isArray(source.chapterIds) ? source.chapterIds.length : 0;
@@ -361,8 +542,14 @@ function buildAdaptiveRebalancePolicy(options, dependencies) {
   const resolvedHistoryDir = resolvePathFromCwd(parsedOptions.historyDir, deps);
   const resolvedThresholdsPath = resolvePathFromCwd(parsedOptions.thresholdsPath, deps);
   const resolvedOutputPath = resolvePathFromCwd(parsedOptions.outputPath, deps);
+  const resolvedPreviousPolicyPath = resolvePathFromCwd(parsedOptions.previousPolicyPath, deps);
   const thresholdPayload = normalizeTrendThresholds(
     readJsonFile(resolvedThresholdsPath, 'thresholds', deps)
+  );
+  const previousPolicyPayload = readOptionalJsonFile(
+    resolvedPreviousPolicyPath,
+    'previous_adaptive_policy',
+    deps
   );
   const discoveredHistoryPaths = discoverTrendReportPaths(resolvedHistoryDir, deps);
   const seedPaths = (Array.isArray(parsedOptions.seedReportPaths) ? parsedOptions.seedReportPaths : []).map(
@@ -376,6 +563,7 @@ function buildAdaptiveRebalancePolicy(options, dependencies) {
   const chapterIds = Object.keys(thresholdPayload.tuning.chapters).sort();
   const chapters = {};
   const activeChapterIds = [];
+  const guardrailLimitedChapterIds = [];
 
   for (const chapterId of chapterIds) {
     const chapterPolicy = buildAdaptiveChapterPolicy(
@@ -384,9 +572,20 @@ function buildAdaptiveRebalancePolicy(options, dependencies) {
       thresholdPayload.tuning.chapters[chapterId],
       parsedOptions.options
     );
+    const previousChapterPolicy = resolvePreviousChapterPolicy(previousPolicyPayload, chapterId);
+    const guardrail = applyChapterPolicyDriftGuardrail(
+      chapterPolicy.policy,
+      previousChapterPolicy,
+      parsedOptions.options
+    );
+    chapterPolicy.policy = guardrail.policy;
+    chapterPolicy.guardrail = guardrail.guardrail;
     chapters[chapterId] = chapterPolicy;
     if (chapterPolicy.active) {
       activeChapterIds.push(chapterId);
+    }
+    if (chapterPolicy.guardrail.changed) {
+      guardrailLimitedChapterIds.push(chapterId);
     }
   }
 
@@ -395,6 +594,7 @@ function buildAdaptiveRebalancePolicy(options, dependencies) {
     generatedAt: now(),
     historyDir: resolvedHistoryDir,
     thresholdsPath: resolvedThresholdsPath,
+    previousPolicyPath: resolvedPreviousPolicyPath,
     minSamples: parsedOptions.options.minSamples,
     reportCount: reportPaths.length,
     reportPaths,
@@ -405,6 +605,7 @@ function buildAdaptiveRebalancePolicy(options, dependencies) {
     chapters,
     chapterIds,
     activeChapterIds,
+    guardrailLimitedChapterIds,
   };
 
   writeJsonFile(resolvedOutputPath, output, deps);
@@ -451,11 +652,13 @@ module.exports = {
   DEFAULT_HISTORY_DIR,
   DEFAULT_THRESHOLDS_PATH,
   DEFAULT_OUTPUT_PATH,
+  DEFAULT_PREVIOUS_POLICY_PATH,
   DEFAULT_POLICY,
   DEFAULT_OPTIONS,
   parseArgs,
   discoverTrendReportPaths,
   collectChapterHistory,
+  applyChapterPolicyDriftGuardrail,
   buildAdaptiveChapterPolicy,
   buildAdaptiveRebalancePolicy,
   createSummaryLine,
