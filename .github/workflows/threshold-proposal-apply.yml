@@ -140,91 +140,28 @@ PY
         continue-on-error: true
         env:
           ALERT_WEBHOOK_URL: ${{ secrets.THRESHOLD_APPLY_ALERT_WEBHOOK_URL }}
+          ALERT_CHANNEL: ${{ vars.THRESHOLD_APPLY_ALERT_CHANNEL }}
           VERIFY_EXIT_CODE: ${{ steps.post_verify.outputs.exit_code }}
         run: |
-          python - <<'PY'
-import json
-import os
-from datetime import datetime, timezone
-from pathlib import Path
-from urllib import request, error
-
-webhook_url = (os.getenv("ALERT_WEBHOOK_URL") or "").strip()
-payload_path = Path(".tmp/release-readiness/post-apply-webhook-payload.json")
-result_path = Path(".tmp/release-readiness/post-apply-webhook-result.json")
-payload_path.parent.mkdir(parents=True, exist_ok=True)
-
-payload = {
-    "generatedAt": datetime.now(timezone.utc).isoformat(),
-    "event": "threshold_apply_post_verify_failed",
-    "repository": os.getenv("GITHUB_REPOSITORY", ""),
-    "workflow": os.getenv("GITHUB_WORKFLOW", ""),
-    "runId": os.getenv("GITHUB_RUN_ID", ""),
-    "runAttempt": os.getenv("GITHUB_RUN_ATTEMPT", ""),
-    "job": os.getenv("GITHUB_JOB", ""),
-    "sha": os.getenv("GITHUB_SHA", ""),
-    "ref": os.getenv("GITHUB_REF", ""),
-    "actor": os.getenv("GITHUB_ACTOR", ""),
-    "targetRef": "${{ inputs.target_ref }}",
-    "allowManualReview": "${{ inputs.allow_manual_review }}",
-    "pushChanges": "${{ inputs.push_changes }}",
-    "verificationExitCode": int(os.getenv("VERIFY_EXIT_CODE", "1") or "1"),
-    "reverted": True,
-    "artifacts": {
-        "verification": ".tmp/release-readiness/post-apply-verification.json",
-        "revertSummary": ".tmp/release-readiness/post-apply-revert-summary.json",
-    },
-    "runUrl": f"{os.getenv('GITHUB_SERVER_URL', 'https://github.com')}/{os.getenv('GITHUB_REPOSITORY', '')}/actions/runs/{os.getenv('GITHUB_RUN_ID', '')}",
-}
-payload_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
-
-if not webhook_url:
-    result = {
-        "generatedAt": datetime.now(timezone.utc).isoformat(),
-        "sent": False,
-        "skipped": True,
-        "reason": "missing_secret_THRESHOLD_APPLY_ALERT_WEBHOOK_URL",
-    }
-    result_path.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
-    print("External webhook skipped: THRESHOLD_APPLY_ALERT_WEBHOOK_URL is not configured.")
-else:
-    req = request.Request(
-        webhook_url,
-        data=json.dumps(payload).encode("utf-8"),
-        headers={"Content-Type": "application/json"},
-        method="POST",
-    )
-    try:
-        with request.urlopen(req, timeout=10) as response:
-            body = response.read(2048).decode("utf-8", errors="replace")
-            result = {
-                "generatedAt": datetime.now(timezone.utc).isoformat(),
-                "sent": True,
-                "statusCode": response.getcode(),
-                "responsePreview": body,
-            }
-            result_path.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
-            print(f"External webhook delivered: status={response.getcode()}")
-    except error.HTTPError as exc:
-        body = exc.read(2048).decode("utf-8", errors="replace")
-        result = {
-            "generatedAt": datetime.now(timezone.utc).isoformat(),
-            "sent": False,
-            "statusCode": exc.code,
-            "error": f"HTTPError: {exc.reason}",
-            "responsePreview": body,
-        }
-        result_path.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
-        raise SystemExit(f"External webhook failed with HTTP {exc.code}: {exc.reason}")
-    except Exception as exc:
-        result = {
-            "generatedAt": datetime.now(timezone.utc).isoformat(),
-            "sent": False,
-            "error": str(exc),
-        }
-        result_path.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
-        raise SystemExit(f"External webhook request failed: {exc}")
-PY
+          set -euo pipefail
+          node tools/release-readiness/send-threshold-alert.js \
+            --webhook-url="${ALERT_WEBHOOK_URL}" \
+            --channel="${ALERT_CHANNEL:-generic}" \
+            --event=threshold_apply_post_verify_failed \
+            --verification-exit-code="${VERIFY_EXIT_CODE}" \
+            --target-ref="${{ inputs.target_ref }}" \
+            --allow-manual-review="${{ inputs.allow_manual_review }}" \
+            --push-changes="${{ inputs.push_changes }}" \
+            --proposal-summary=.tmp/release-readiness/trend-threshold-proposal.json \
+            --apply-summary=.tmp/release-readiness/trend-threshold-apply-summary.json \
+            --verification=.tmp/release-readiness/post-apply-verification.json \
+            --revert-summary=.tmp/release-readiness/post-apply-revert-summary.json \
+            --payload-output=.tmp/release-readiness/post-apply-webhook-payload.json \
+            --result-output=.tmp/release-readiness/post-apply-webhook-result.json \
+            --retry-count=2 \
+            --retry-backoff-ms=1500 \
+            --request-timeout-ms=10000 \
+            --allow-missing-webhook=true
 
       - name: Fail workflow after auto-revert
         if: steps.post_verify.outcome == 'failure'

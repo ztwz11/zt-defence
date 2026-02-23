@@ -230,6 +230,18 @@
 | --- | --- | --- | --- | --- |
 | BH webhook notification bridge on post-verify failure | codex-main | Completed | `.github/workflows/threshold-proposal-apply.yml` | post-apply verify 실패+auto-revert 시 `THRESHOLD_APPLY_ALERT_WEBHOOK_URL`로 JSON payload 전송(best-effort) + webhook payload/result artifact 생성 |
 
+## Batch 30 Completion (external alert payload standardization)
+
+| Module | Owner | Status | Owned Paths | Checks |
+| --- | --- | --- | --- | --- |
+| BI standardized alert payload model | codex-main | Completed | `tools/release-readiness/send-threshold-alert.js`, `tests/perf/send-threshold-alert.test.js`, `.github/workflows/threshold-proposal-apply.yml` | `schemaVersion/source/failure/thresholdDiff/links/artifacts` 구조로 payload 표준화 + PR 링크/threshold diff 요약 포함 |
+
+## Batch 31 Completion (retry/backoff + channel adapters)
+
+| Module | Owner | Status | Owned Paths | Checks |
+| --- | --- | --- | --- | --- |
+| BJ channel adapter + retry delivery policy | codex-main | Completed | `tools/release-readiness/send-threshold-alert.js`, `tests/perf/send-threshold-alert.test.js`, `.github/workflows/threshold-proposal-apply.yml` | `generic/slack/teams` adapter + retry/backoff(2회) + timeout 적용, webhook 미설정 시 skip 정책 유지 |
+
 ## Current Gate Snapshot
 
 1. `node tools/perf/run-and-check.js --profile=ci-mobile-baseline --iterations=200 --output=.tmp/release-readiness/perf-gate-report.json` -> `PASS`
@@ -243,7 +255,7 @@
 9. `node tools/release-readiness/rebalance-trend-thresholds.js --report=.tmp/release-readiness/trend-diff-report.json --thresholds=tools/release-readiness/trend-thresholds.json --adaptive-policy=.tmp/release-readiness/adaptive-rebalance-policy.json --output=.tmp/release-readiness/trend-threshold-recommendation.json` -> `PASS` (adaptive policy 연동 drift threshold recommendation generated)
 10. `node tools/release-readiness/build-threshold-proposal-comment.js --trend-report=.tmp/release-readiness/trend-diff-report.json --sync-summary=.tmp/release-readiness/trend-threshold-sync-summary.json --rebalance-report=.tmp/release-readiness/trend-threshold-recommendation.json --output=.tmp/release-readiness/trend-threshold-proposal-comment.md --output-json=.tmp/release-readiness/trend-threshold-proposal.json` -> `PASS` (PR 코멘트용 proposal artifact generated)
 11. `node tools/release-readiness/apply-threshold-proposal.js --proposal=.tmp/release-readiness/trend-threshold-proposal.json --thresholds=tools/release-readiness/trend-thresholds.json --output=.tmp/release-readiness/trend-thresholds.applied.preview.json --summary-output=.tmp/release-readiness/trend-threshold-apply-summary.json --allow-manual-review` -> `PASS` (manual apply preview artifact generated)
-12. `threshold-proposal-apply.yml` (`workflow_dispatch`)에서 apply 후 release-readiness 재검증 실패 시 `post-apply-revert-summary.json` 생성 + threshold 파일 자동복구 + (옵션) `THRESHOLD_APPLY_ALERT_WEBHOOK_URL` 외부 webhook 알림 + 워크플로우 실패 처리
+12. `threshold-proposal-apply.yml` (`workflow_dispatch`)에서 apply 후 release-readiness 재검증 실패 시 `post-apply-revert-summary.json` 생성 + threshold 파일 자동복구 + (옵션) `THRESHOLD_APPLY_ALERT_WEBHOOK_URL` 외부 webhook 알림(`THRESHOLD_APPLY_ALERT_CHANNEL`=`generic|slack|teams`, retry/backoff 포함) + 워크플로우 실패 처리
 13. local gate artifacts generated:
    - `.tmp/release-readiness/perf-gate-report.json`
    - `.tmp/release-readiness/tuning-gate-report.chapter_1.json`
@@ -266,11 +278,12 @@
 
 ## Remaining Blockers
 
-1. No blocking issue for Batch 11-29 release-gate scope.
+1. No blocking issue for Batch 11-31 release-gate scope.
 2. 외부 알림 활성화는 저장소 시크릿 `THRESHOLD_APPLY_ALERT_WEBHOOK_URL` 구성 여부에 의존.
+3. Slack/Teams 실제 렌더링 품질은 각 채널 webhook endpoint로 1회 실환경 검증 필요.
 
 ## Next Parallel Batch Plan
 
-1. Batch 30: external alert payload 표준화 확장(실패 스텝 상세/threshold diff 요약/PR 링크).
-2. Batch 31: webhook 전송 실패 재시도/backoff 및 채널별 adapter(Slack/Teams) 분기 지원.
+1. Batch 32: channel별 payload 템플릿 세분화(슬랙 block/fallback, Teams fact section 확장) 및 문서화.
+2. Batch 33: alert correlation id/중복방지 키 도입으로 동일 run 재시도 알림 dedupe.
 
