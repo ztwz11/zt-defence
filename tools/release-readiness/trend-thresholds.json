@@ -20,14 +20,29 @@
     }
   },
   "tuning": {
+    "defaultChapterThreshold": {
+      "scoreIncreaseMax": 0.3,
+      "allowStatusDegrade": false,
+      "allowMissingBaseline": false,
+      "allowMissingCurrent": false
+    },
+    "autoScaffold": {
+      "enabled": true,
+      "allowMissingBaseline": true,
+      "allowMissingCurrent": false
+    },
     "chapters": {
       "chapter_1": {
         "scoreIncreaseMax": 0.2,
-        "allowStatusDegrade": false
+        "allowStatusDegrade": false,
+        "allowMissingBaseline": false,
+        "allowMissingCurrent": false
       },
       "chapter_2": {
         "scoreIncreaseMax": 0.25,
-        "allowStatusDegrade": false
+        "allowStatusDegrade": false,
+        "allowMissingBaseline": false,
+        "allowMissingCurrent": false
       }
     }
   }

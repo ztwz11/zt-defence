@@ -9,6 +9,7 @@ const DEFAULT_CURRENT_DIR = '.tmp/release-readiness';
 const DEFAULT_BASELINE_DIR = '.tmp/release-readiness/baseline';
 const DEFAULT_THRESHOLDS_PATH = path.join(__dirname, 'trend-thresholds.json');
 const PERF_REPORT_FILENAME = 'perf-gate-report.json';
+const TUNING_REPORT_FILENAME_RE = /^tuning-gate-report\.(chapter_[a-z0-9_]+)\.json$/i;
 
 function isPlainObject(value) {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -227,14 +228,29 @@ function createDefaultTrendThresholds() {
       },
     },
     tuning: {
+      defaultChapterThreshold: {
+        scoreIncreaseMax: 0.3,
+        allowStatusDegrade: false,
+        allowMissingBaseline: false,
+        allowMissingCurrent: false,
+      },
+      autoScaffold: {
+        enabled: true,
+        allowMissingBaseline: true,
+        allowMissingCurrent: false,
+      },
       chapters: {
         chapter_1: {
           scoreIncreaseMax: 0.2,
           allowStatusDegrade: false,
+          allowMissingBaseline: false,
+          allowMissingCurrent: false,
         },
         chapter_2: {
           scoreIncreaseMax: 0.25,
           allowStatusDegrade: false,
+          allowMissingBaseline: false,
+          allowMissingCurrent: false,
         },
       },
     },
@@ -272,25 +288,44 @@ function normalizePerfOperationThresholds(source, fallback) {
   return target;
 }
 
-function normalizeTuningChapterThresholds(source, fallback) {
+function normalizeTuningChapterThreshold(source, fallback) {
+  const input = isPlainObject(source) ? source : {};
+  const fallbackThreshold = isPlainObject(fallback) ? fallback : {};
+
+  return {
+    scoreIncreaseMax: toNonNegativeNumber(
+      input.scoreIncreaseMax,
+      toNonNegativeNumber(fallbackThreshold.scoreIncreaseMax, 0)
+    ),
+    allowStatusDegrade: parseBooleanLike(
+      input.allowStatusDegrade,
+      parseBooleanLike(fallbackThreshold.allowStatusDegrade, false)
+    ),
+    allowMissingBaseline: parseBooleanLike(
+      input.allowMissingBaseline,
+      parseBooleanLike(fallbackThreshold.allowMissingBaseline, false)
+    ),
+    allowMissingCurrent: parseBooleanLike(
+      input.allowMissingCurrent,
+      parseBooleanLike(fallbackThreshold.allowMissingCurrent, false)
+    ),
+  };
+}
+
+function normalizeTuningChapterThresholds(source, fallback, defaultChapterThreshold) {
   const input = isPlainObject(source) ? source : {};
   const defaultThresholds = isPlainObject(fallback) ? fallback : {};
+  const defaultChapter = isPlainObject(defaultChapterThreshold) ? defaultChapterThreshold : {};
   const target = {};
   const chapterIds = new Set([...Object.keys(defaultThresholds), ...Object.keys(input)]);
 
   for (const chapterId of chapterIds) {
     const currentSource = isPlainObject(input[chapterId]) ? input[chapterId] : {};
     const fallbackSource = isPlainObject(defaultThresholds[chapterId]) ? defaultThresholds[chapterId] : {};
-    target[chapterId] = {
-      scoreIncreaseMax: toNonNegativeNumber(
-        currentSource.scoreIncreaseMax,
-        toNonNegativeNumber(fallbackSource.scoreIncreaseMax, 0)
-      ),
-      allowStatusDegrade: parseBooleanLike(
-        currentSource.allowStatusDegrade,
-        parseBooleanLike(fallbackSource.allowStatusDegrade, false)
-      ),
-    };
+    target[chapterId] = normalizeTuningChapterThreshold(currentSource, {
+      ...defaultChapter,
+      ...fallbackSource,
+    });
   }
 
   return target;
@@ -303,6 +338,14 @@ function normalizeTrendThresholds(source) {
   const tuning = isPlainObject(parsed.tuning) ? parsed.tuning : {};
   const defaultPerf = isPlainObject(defaults.perf) ? defaults.perf : {};
   const defaultTuning = isPlainObject(defaults.tuning) ? defaults.tuning : {};
+  const defaultChapterThreshold = normalizeTuningChapterThreshold(
+    tuning.defaultChapterThreshold,
+    defaultTuning.defaultChapterThreshold
+  );
+  const autoScaffoldSource = isPlainObject(tuning.autoScaffold) ? tuning.autoScaffold : {};
+  const defaultAutoScaffold = isPlainObject(defaultTuning.autoScaffold)
+    ? defaultTuning.autoScaffold
+    : {};
 
   return {
     version:
@@ -316,11 +359,111 @@ function normalizeTrendThresholds(source) {
       ),
     },
     tuning: {
+      defaultChapterThreshold,
+      autoScaffold: {
+        enabled: parseBooleanLike(autoScaffoldSource.enabled, parseBooleanLike(defaultAutoScaffold.enabled, true)),
+        allowMissingBaseline: parseBooleanLike(
+          autoScaffoldSource.allowMissingBaseline,
+          parseBooleanLike(defaultAutoScaffold.allowMissingBaseline, true)
+        ),
+        allowMissingCurrent: parseBooleanLike(
+          autoScaffoldSource.allowMissingCurrent,
+          parseBooleanLike(defaultAutoScaffold.allowMissingCurrent, false)
+        ),
+      },
       chapters: normalizeTuningChapterThresholds(
         tuning.chapters,
-        defaultTuning.chapters
+        defaultTuning.chapters,
+        defaultChapterThreshold
       ),
     },
+  };
+}
+
+function extractChapterIdFromTuningReportFilename(filename) {
+  const candidate = typeof filename === 'string' ? filename.trim() : '';
+  if (candidate.length === 0) {
+    return null;
+  }
+
+  const matched = candidate.match(TUNING_REPORT_FILENAME_RE);
+  if (!matched) {
+    return null;
+  }
+
+  return matched[1].toLowerCase();
+}
+
+function discoverTuningReportChapterIds(baseDirPath, dependencies) {
+  const deps = isPlainObject(dependencies) ? dependencies : {};
+  const existsSync = typeof deps.existsSync === 'function' ? deps.existsSync : fs.existsSync;
+  const readdirSync = typeof deps.readdirSync === 'function' ? deps.readdirSync : fs.readdirSync;
+  const chapterIds = new Set();
+
+  if (!existsSync(baseDirPath)) {
+    return [];
+  }
+
+  let entries = [];
+  try {
+    entries = readdirSync(baseDirPath);
+  } catch (_error) {
+    return [];
+  }
+
+  for (const entry of entries) {
+    const chapterId = extractChapterIdFromTuningReportFilename(entry);
+    if (chapterId) {
+      chapterIds.add(chapterId);
+    }
+  }
+
+  return Array.from(chapterIds).sort();
+}
+
+function scaffoldMissingChapterThresholds(normalizedThresholds, chapterIds) {
+  const thresholds = normalizeTrendThresholds(normalizedThresholds);
+  const discoveredChapterIds = Array.isArray(chapterIds) ? chapterIds : [];
+  const baseChapterThresholds = isPlainObject(thresholds.tuning?.chapters) ? thresholds.tuning.chapters : {};
+  const autoScaffold = isPlainObject(thresholds.tuning?.autoScaffold) ? thresholds.tuning.autoScaffold : {};
+  const defaultChapterThreshold = isPlainObject(thresholds.tuning?.defaultChapterThreshold)
+    ? thresholds.tuning.defaultChapterThreshold
+    : {};
+  const chapterSet = new Set([...Object.keys(baseChapterThresholds), ...discoveredChapterIds]);
+  const sortedChapterIds = Array.from(chapterSet).sort();
+  const nextChapterThresholds = {};
+  const scaffoldedChapterIds = [];
+
+  for (const chapterId of sortedChapterIds) {
+    if (isPlainObject(baseChapterThresholds[chapterId])) {
+      nextChapterThresholds[chapterId] = baseChapterThresholds[chapterId];
+      continue;
+    }
+
+    if (!parseBooleanLike(autoScaffold.enabled, true)) {
+      continue;
+    }
+
+    nextChapterThresholds[chapterId] = normalizeTuningChapterThreshold(
+      {
+        ...defaultChapterThreshold,
+        allowMissingBaseline: parseBooleanLike(autoScaffold.allowMissingBaseline, true),
+        allowMissingCurrent: parseBooleanLike(autoScaffold.allowMissingCurrent, false),
+      },
+      defaultChapterThreshold
+    );
+    scaffoldedChapterIds.push(chapterId);
+  }
+
+  return {
+    thresholds: {
+      ...thresholds,
+      tuning: {
+        ...thresholds.tuning,
+        chapters: nextChapterThresholds,
+      },
+    },
+    scaffoldedChapterIds,
   };
 }
 
@@ -466,8 +609,27 @@ function compareTuningMetrics(currentIndex, baselineIndex, chapterThresholds) {
     const chapterThreshold = isPlainObject(thresholds[chapterId]) ? thresholds[chapterId] : {};
     const currentSummary = isPlainObject(current[chapterId]) ? current[chapterId] : null;
     const baselineSummary = isPlainObject(baseline[chapterId]) ? baseline[chapterId] : null;
+    const allowMissingBaseline = parseBooleanLike(chapterThreshold.allowMissingBaseline, false);
+    const allowMissingCurrent = parseBooleanLike(chapterThreshold.allowMissingCurrent, false);
 
     if (!currentSummary || !baselineSummary) {
+      const missingCurrent = !currentSummary;
+      const missingBaseline = !baselineSummary;
+      const missingAllowed =
+        (missingCurrent && allowMissingCurrent) || (missingBaseline && allowMissingBaseline);
+
+      deltas[chapterId] = {
+        missing: {
+          currentExists: Boolean(currentSummary),
+          baselineExists: Boolean(baselineSummary),
+          allowed: missingAllowed,
+        },
+      };
+
+      if (missingAllowed) {
+        continue;
+      }
+
       regressions.push({
         type: 'missing_tuning_chapter',
         chapterId,
@@ -606,15 +768,24 @@ function allFilesExist(pathsMap, dependencies) {
   return true;
 }
 
-function loadReportsFromPaths(pathsMap, dependencies) {
+function loadReportsFromPaths(pathsMap, dependencies, options) {
+  const source = isPlainObject(options) ? options : {};
+  const deps = isPlainObject(dependencies) ? dependencies : {};
+  const existsSync = typeof deps.existsSync === 'function' ? deps.existsSync : fs.existsSync;
+  const allowMissingTuning = source.allowMissingTuning === true;
   const loaded = {
     perf: readJsonFile(pathsMap.perf, 'perf_report', dependencies),
     tuning: {},
   };
 
   for (const chapterId of Object.keys(pathsMap.tuning || {}).sort()) {
+    const tuningPath = pathsMap.tuning[chapterId];
+    if (!existsSync(tuningPath) && allowMissingTuning) {
+      continue;
+    }
+
     loaded.tuning[chapterId] = readJsonFile(
-      pathsMap.tuning[chapterId],
+      tuningPath,
       `tuning_report:${chapterId}`,
       dependencies
     );
@@ -695,27 +866,43 @@ function createSummaryLine(result) {
   if (Array.isArray(source.regressions)) {
     parts.push(`regressions=${source.regressions.length}`);
   }
+  if (Array.isArray(source.scaffoldedChapterIds) && source.scaffoldedChapterIds.length > 0) {
+    parts.push(`scaffoldedChapters=${source.scaffoldedChapterIds.join(',')}`);
+  }
   return parts.join(' ');
 }
 
 function runTrendDiff(options, dependencies) {
   const deps = isPlainObject(dependencies) ? dependencies : {};
+  const existsSync = typeof deps.existsSync === 'function' ? deps.existsSync : fs.existsSync;
   const now = typeof deps.now === 'function' ? deps.now : () => new Date().toISOString();
   const resolvedCurrentDir = resolvePathFromCwd(options.currentDir, deps);
   const resolvedBaselineDir = resolvePathFromCwd(options.baselineDir, deps);
   const resolvedThresholdsPath = resolvePathFromCwd(options.thresholdsPath, deps);
   const rawThresholds = readJsonFile(resolvedThresholdsPath, 'trend_thresholds', deps);
   const normalizedThresholds = normalizeTrendThresholds(rawThresholds);
-  const currentPaths = collectRequiredReportPaths(resolvedCurrentDir, normalizedThresholds);
-  const baselinePaths = collectRequiredReportPaths(resolvedBaselineDir, normalizedThresholds);
-  const baselineExists = allFilesExist(baselinePaths, deps);
+  const configuredChapterIds = Object.keys(normalizedThresholds.tuning.chapters).sort();
+  const discoveredCurrentChapterIds = discoverTuningReportChapterIds(resolvedCurrentDir, deps);
+  const discoveredBaselineChapterIds = discoverTuningReportChapterIds(resolvedBaselineDir, deps);
+  const chapterIds = Array.from(
+    new Set([...configuredChapterIds, ...discoveredCurrentChapterIds, ...discoveredBaselineChapterIds])
+  ).sort();
+  const scaffoldResult = scaffoldMissingChapterThresholds(normalizedThresholds, chapterIds);
+  const effectiveThresholds = scaffoldResult.thresholds;
+  const scaffoldedChapterIds = scaffoldResult.scaffoldedChapterIds;
+  const effectiveChapterIds = Object.keys(effectiveThresholds.tuning.chapters).sort();
+  const currentPaths = collectRequiredReportPaths(resolvedCurrentDir, effectiveThresholds);
+  const baselinePaths = collectRequiredReportPaths(resolvedBaselineDir, effectiveThresholds);
+  const baselinePerfExists = existsSync(baselinePaths.perf);
 
-  if (!baselineExists && options.allowMissingBaseline) {
+  if (!baselinePerfExists && options.allowMissingBaseline) {
     const skippedResult = {
       ok: true,
       skipped: true,
       reason: 'baseline_missing',
-      thresholdsVersion: normalizedThresholds.version,
+      thresholdsVersion: effectiveThresholds.version,
+      effectiveChapterIds,
+      scaffoldedChapterIds,
       regressions: [],
       deltas: {
         perf: {},
@@ -728,6 +915,7 @@ function runTrendDiff(options, dependencies) {
       currentDir: resolvedCurrentDir,
       baselineDir: resolvedBaselineDir,
       thresholdsPath: resolvedThresholdsPath,
+      effectiveThresholds,
       ...skippedResult,
     };
     const savedPath = options.outputPath ? writeJsonReportFile(options.outputPath, payload, deps) : null;
@@ -741,13 +929,19 @@ function runTrendDiff(options, dependencies) {
     };
   }
 
-  const currentReports = loadReportsFromPaths(currentPaths, deps);
-  const baselineReports = loadReportsFromPaths(baselinePaths, deps);
-  const evaluation = evaluateTrendDiff(currentReports, baselineReports, normalizedThresholds);
+  const currentReports = loadReportsFromPaths(currentPaths, deps, {
+    allowMissingTuning: true,
+  });
+  const baselineReports = loadReportsFromPaths(baselinePaths, deps, {
+    allowMissingTuning: true,
+  });
+  const evaluation = evaluateTrendDiff(currentReports, baselineReports, effectiveThresholds);
   const result = {
     ...evaluation,
     skipped: false,
     reason: null,
+    effectiveChapterIds,
+    scaffoldedChapterIds,
   };
 
   const payload = {
@@ -755,6 +949,7 @@ function runTrendDiff(options, dependencies) {
     currentDir: resolvedCurrentDir,
     baselineDir: resolvedBaselineDir,
     thresholdsPath: resolvedThresholdsPath,
+    effectiveThresholds,
     ...result,
   };
 
@@ -819,6 +1014,9 @@ module.exports = {
   DEFAULT_THRESHOLDS_PATH,
   parseArgs,
   normalizeTrendThresholds,
+  extractChapterIdFromTuningReportFilename,
+  discoverTuningReportChapterIds,
+  scaffoldMissingChapterThresholds,
   buildPerfStatsIndex,
   buildTuningSummaryIndex,
   comparePerfMetrics,
