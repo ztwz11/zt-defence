@@ -1,0 +1,30 @@
+{
+  "version": "0.1.0",
+  "units": {
+    "hero_chibi_01": {
+      "animations": {
+        "idle": {
+          "sheetPath": "assets/sprites/units/hero_chibi_01/idle.png",
+          "metaPath": "assets/sprites/units/hero_chibi_01/idle.meta.json",
+          "key": "hero_chibi_01.idle"
+        },
+        "attack": {
+          "sheetPath": "assets/sprites/units/hero_chibi_01/attack.png",
+          "metaPath": "assets/sprites/units/hero_chibi_01/attack.meta.json",
+          "key": "hero_chibi_01.attack"
+        },
+        "hit": {
+          "sheetPath": "assets/sprites/units/hero_chibi_01/hit.png",
+          "metaPath": "assets/sprites/units/hero_chibi_01/hit.meta.json",
+          "key": "hero_chibi_01.hit"
+        },
+        "die": {
+          "sheetPath": "assets/sprites/units/hero_chibi_01/die.png",
+          "metaPath": "assets/sprites/units/hero_chibi_01/die.meta.json",
+          "key": "hero_chibi_01.die"
+        }
+      },
+      "defaultAnimation": "idle"
+    }
+  }
+}

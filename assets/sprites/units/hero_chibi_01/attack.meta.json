@@ -1,0 +1,46 @@
+{
+  "version": "0.1.0",
+  "frameWidth": 1024,
+  "frameHeight": 1024,
+  "frameCount": 4,
+  "fps": 12,
+  "loop": false,
+  "anchor": {
+    "x": 0.5,
+    "y": 1.0
+  },
+  "frames": [
+    {
+      "index": 0,
+      "x": 0,
+      "y": 0,
+      "w": 1024,
+      "h": 1024,
+      "durationMs": 83
+    },
+    {
+      "index": 1,
+      "x": 1024,
+      "y": 0,
+      "w": 1024,
+      "h": 1024,
+      "durationMs": 83
+    },
+    {
+      "index": 2,
+      "x": 2048,
+      "y": 0,
+      "w": 1024,
+      "h": 1024,
+      "durationMs": 83
+    },
+    {
+      "index": 3,
+      "x": 3072,
+      "y": 0,
+      "w": 1024,
+      "h": 1024,
+      "durationMs": 83
+    }
+  ]
+}
