@@ -5,6 +5,11 @@ const { evaluateRelicEffects } = require('../game/relics');
 const { applyReward } = require('../game/rewards');
 const { RUN_PHASE } = require('../game/run');
 const { runTickSimulation } = require('../game/sim/tickSimulation');
+const {
+  getUnitsCatalog,
+  hydrateUnitsCatalogWithAssets,
+  buildRuntimeUnitVisualMap,
+} = require('../content');
 const { createHeadlessRenderAdapter } = require('../render/headless-render-adapter');
 const { createRunStateStore } = require('../ui/run-state-store');
 
@@ -50,6 +55,23 @@ function roundTo(value, digits) {
 
 function cloneArray(value) {
   return Array.isArray(value) ? value.slice() : [];
+}
+
+function cloneValue(value) {
+  if (Array.isArray(value)) {
+    return value.map(cloneValue);
+  }
+
+  if (!isPlainObject(value)) {
+    return value;
+  }
+
+  const clone = {};
+  const keys = Object.keys(value);
+  for (const key of keys) {
+    clone[key] = cloneValue(value[key]);
+  }
+  return clone;
 }
 
 function normalizeRewardList(rewardInput) {
@@ -163,6 +185,68 @@ function buildSimulationConfig(runContext) {
   }
 
   return simulationConfig;
+}
+
+function normalizeRuntimeUnitId(unit, index) {
+  if (isPlainObject(unit) && typeof unit.id === 'string' && unit.id.length > 0) {
+    return unit.id;
+  }
+  return `unit_${index + 1}`;
+}
+
+function resolveHydratedUnitsCatalog(config) {
+  if (isPlainObject(config.hydratedUnitsCatalog) && isPlainObject(config.hydratedUnitsCatalog.byId)) {
+    return config.hydratedUnitsCatalog;
+  }
+
+  try {
+    if (isPlainObject(config.unitsCatalog) && isPlainObject(config.unitsCatalog.byId)) {
+      return config.unitsCatalog;
+    }
+
+    if (isPlainObject(config.unitsCatalog)) {
+      return hydrateUnitsCatalogWithAssets(config.unitsCatalog, {
+        manifestPath: config.unitSpriteManifestPath,
+      });
+    }
+
+    const unitsCatalog = getUnitsCatalog({
+      path: config.unitsCatalogPath,
+    });
+    return hydrateUnitsCatalogWithAssets(unitsCatalog, {
+      manifestPath: config.unitSpriteManifestPath,
+    });
+  } catch (_error) {
+    return null;
+  }
+}
+
+function buildSimulationPlan(runContext, hydratedUnitsCatalog) {
+  const simulationConfig = buildSimulationConfig(runContext);
+  const sourceUnits = Array.isArray(simulationConfig.units) ? simulationConfig.units : [];
+  const runtimeUnitIds = sourceUnits.map((unit, index) => normalizeRuntimeUnitId(unit, index));
+  const runtimeUnitVisualMap = hydratedUnitsCatalog
+    ? buildRuntimeUnitVisualMap(runtimeUnitIds, hydratedUnitsCatalog)
+    : {};
+
+  simulationConfig.units = sourceUnits.map((unit, index) => {
+    const normalizedRuntimeUnitId = runtimeUnitIds[index];
+    const visual = runtimeUnitVisualMap[normalizedRuntimeUnitId];
+    if (!visual || !isPlainObject(unit)) {
+      return isPlainObject(unit) ? { ...unit } : unit;
+    }
+
+    return {
+      ...unit,
+      unitDefId: visual.unitId,
+      renderAssets: cloneValue(visual.renderAssets),
+    };
+  });
+
+  return {
+    simulationConfig,
+    runtimeUnitVisualMap: cloneValue(runtimeUnitVisualMap),
+  };
 }
 
 function resolveWaveOutcome(simulationResult, gateHp) {
@@ -295,6 +379,7 @@ function createRunOrchestrationService(options) {
     config.renderAdapter && typeof config.renderAdapter.consumeSimulationEvents === 'function'
       ? config.renderAdapter
       : createHeadlessRenderAdapter();
+  const hydratedUnitsCatalog = resolveHydratedUnitsCatalog(config);
 
   function runWaveSlice(chapterContext) {
     const runContext = startRunFromChapterContext(chapterContext);
@@ -319,8 +404,11 @@ function createRunOrchestrationService(options) {
       }
     }
 
-    const simulationResult = simulate(buildSimulationConfig(runContext));
-    const renderResult = renderAdapter.consumeSimulationEvents(simulationResult);
+    const simulationPlan = buildSimulationPlan(runContext, hydratedUnitsCatalog);
+    const simulationResult = simulate(simulationPlan.simulationConfig);
+    const renderResult = renderAdapter.consumeSimulationEvents(simulationResult, {
+      runtimeUnitVisualMap: simulationPlan.runtimeUnitVisualMap,
+    });
     const currentState = runContext.store.getState();
     const outcome = resolveWaveOutcome(simulationResult, currentState.gateHp);
     const gateUpdate = runContext.store.setState({

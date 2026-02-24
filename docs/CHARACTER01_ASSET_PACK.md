@@ -36,3 +36,8 @@ const unitsCatalog = getUnitsCatalog();
 const runtimeUnits = hydrateUnitsCatalogWithAssets(unitsCatalog);
 const heroIdle = runtimeUnits.byId.hero_chibi_01.renderAssets.idle;
 ```
+
+## Runtime event binding
+- `createRunOrchestrationService` now enriches simulation units with `unitDefId` + `renderAssets`.
+- `createHeadlessRenderAdapter` emits `renderBinding` on unit-origin simulation events (for example `Damage` from `srcId`).
+- Scene consumers can use `renderBinding.animationKey/sheetPath/metaPath` to pick animation clips without hardcoded unit tables.

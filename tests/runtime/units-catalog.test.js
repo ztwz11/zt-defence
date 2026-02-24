@@ -8,6 +8,8 @@ const {
   normalizeUnitsCatalog,
   loadUnitsCatalog,
   hydrateUnitsCatalogWithAssets,
+  resolveUnitDefinitionId,
+  buildRuntimeUnitVisualMap,
 } = require('../../src/content/units-catalog');
 
 test('normalizeUnitsCatalog fills defaults and normalizes animation aliases', () => {
@@ -64,4 +66,32 @@ test('hydrateUnitsCatalogWithAssets falls back to convention for non-manifest un
   assert.ok(knight);
   assert.equal(knight.renderAssets.idle.source, 'convention');
   assert.equal(knight.renderAssets.idle.sheetPath, 'assets/sprites/units/knight_sword/idle.png');
+});
+
+test('resolveUnitDefinitionId maps runtime instance ids to unit definition ids', () => {
+  const catalog = hydrateUnitsCatalogWithAssets(loadUnitsCatalog());
+
+  assert.equal(resolveUnitDefinitionId('archer_1', catalog), 'archer');
+  assert.equal(resolveUnitDefinitionId('hero_chibi_01', catalog), 'hero_chibi_01');
+  assert.equal(resolveUnitDefinitionId('mage_1', catalog), 'fire_mage');
+  assert.equal(resolveUnitDefinitionId('unknown_99', catalog), null);
+});
+
+test('buildRuntimeUnitVisualMap returns render bindings for known runtime unit ids', () => {
+  const catalog = hydrateUnitsCatalogWithAssets(loadUnitsCatalog(), {
+    manifestPath: path.resolve(__dirname, '../../assets/meta/unit-sprite-manifest.json'),
+  });
+
+  const map = buildRuntimeUnitVisualMap(['archer_1', 'hero_chibi_01', 'unknown_1'], catalog);
+
+  assert.equal(Object.prototype.hasOwnProperty.call(map, 'archer_1'), true);
+  assert.equal(Object.prototype.hasOwnProperty.call(map, 'hero_chibi_01'), true);
+  assert.equal(Object.prototype.hasOwnProperty.call(map, 'unknown_1'), false);
+
+  assert.equal(map.archer_1.unitId, 'archer');
+  assert.equal(map.hero_chibi_01.unitId, 'hero_chibi_01');
+  assert.equal(
+    map.hero_chibi_01.renderAssets.idle.sheetPath,
+    'assets/sprites/units/hero_chibi_01/idle.png'
+  );
 });

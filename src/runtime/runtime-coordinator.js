@@ -53,8 +53,8 @@ function createSimulationEmitterAdapter(baseRenderAdapter, bus) {
       ? baseRenderAdapter
       : createHeadlessRenderAdapter();
 
-  function consumeSimulationEvents(simulationResult) {
-    const renderResult = targetAdapter.consumeSimulationEvents(simulationResult);
+  function consumeSimulationEvents(simulationResult, renderContext) {
+    const renderResult = targetAdapter.consumeSimulationEvents(simulationResult, renderContext);
     const events = Array.isArray(renderResult?.events)
       ? renderResult.events
       : [];

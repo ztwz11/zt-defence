@@ -177,4 +177,5 @@ test('run slice returns deterministic output for identical seed and context', ()
   assert.equal(runA.value.hud.gold, 14);
   assert.equal(runA.value.hud.wave, 3);
   assert.ok(runA.value.render.frames.length > 0);
+  assert.equal(runA.value.render.runtimeUnitVisualMap.archer_1.unitId, 'archer');
 });

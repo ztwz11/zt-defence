@@ -53,6 +53,22 @@ function deepFreeze(value) {
   return Object.freeze(value);
 }
 
+function cloneValue(value) {
+  if (Array.isArray(value)) {
+    return value.map(cloneValue);
+  }
+
+  if (!isPlainObject(value)) {
+    return value;
+  }
+
+  const target = {};
+  for (const key of Object.keys(value)) {
+    target[key] = cloneValue(value[key]);
+  }
+  return target;
+}
+
 function normalizeId(rawId, fallbackId) {
   const id = normalizeString(rawId, fallbackId);
   return /^[a-z][a-z0-9_\-.]*$/.test(id) ? id : fallbackId;
@@ -292,10 +308,118 @@ function hydrateUnitsCatalogWithAssets(catalog, options) {
   });
 }
 
+function stripInstanceSuffix(unitId) {
+  const normalized = normalizeString(unitId);
+  if (!normalized) {
+    return '';
+  }
+  return normalized.replace(/([_#-])\d+$/u, '');
+}
+
+function findFuzzyUnitDefinitionId(catalog, strippedRuntimeId) {
+  if (!isPlainObject(catalog?.byId) || !strippedRuntimeId) {
+    return null;
+  }
+
+  const byId = catalog.byId;
+  const allIds = Object.keys(byId).sort();
+  if (allIds.length === 0) {
+    return null;
+  }
+
+  if (allIds.includes(strippedRuntimeId)) {
+    return strippedRuntimeId;
+  }
+
+  const token = strippedRuntimeId
+    .split(/[_.#-]+/u)
+    .filter(Boolean)
+    .pop();
+  if (!token || token.length < 3) {
+    return null;
+  }
+
+  const fuzzyCandidates = allIds.filter(
+    (id) =>
+      id === token ||
+      id.endsWith(`_${token}`) ||
+      id.startsWith(`${token}_`) ||
+      id.includes(`_${token}_`)
+  );
+  if (fuzzyCandidates.length === 1) {
+    return fuzzyCandidates[0];
+  }
+
+  return null;
+}
+
+function resolveUnitDefinitionId(runtimeUnitId, catalog) {
+  const normalizedRuntimeId = normalizeString(runtimeUnitId);
+  if (!normalizedRuntimeId || !isPlainObject(catalog?.byId)) {
+    return null;
+  }
+
+  const byId = catalog.byId;
+  if (byId[normalizedRuntimeId]) {
+    return normalizedRuntimeId;
+  }
+
+  const stripped = stripInstanceSuffix(normalizedRuntimeId);
+  if (stripped && byId[stripped]) {
+    return stripped;
+  }
+
+  return findFuzzyUnitDefinitionId(catalog, stripped);
+}
+
+function resolveRuntimeUnitVisual(runtimeUnitId, catalog) {
+  const unitDefId = resolveUnitDefinitionId(runtimeUnitId, catalog);
+  if (!unitDefId) {
+    return null;
+  }
+
+  const unitDef = catalog.byId?.[unitDefId];
+  if (!isPlainObject(unitDef) || !isPlainObject(unitDef.renderAssets)) {
+    return null;
+  }
+
+  return deepFreeze({
+    runtimeUnitId: normalizeString(runtimeUnitId),
+    unitId: unitDefId,
+    name: normalizeString(unitDef.name, unitDefId),
+    renderAssets: cloneValue(unitDef.renderAssets),
+  });
+}
+
+function buildRuntimeUnitVisualMap(runtimeUnitIds, catalog) {
+  const hydratedCatalog = isPlainObject(catalog) ? catalog : hydrateUnitsCatalogWithAssets();
+  const sourceIds = Array.isArray(runtimeUnitIds) ? runtimeUnitIds : [];
+  const uniqueIds = Array.from(
+    new Set(
+      sourceIds
+        .map((value) => normalizeString(value))
+        .filter(Boolean)
+    )
+  ).sort();
+
+  const map = {};
+  for (const runtimeUnitId of uniqueIds) {
+    const visual = resolveRuntimeUnitVisual(runtimeUnitId, hydratedCatalog);
+    if (visual) {
+      map[runtimeUnitId] = visual;
+    }
+  }
+
+  return deepFreeze(map);
+}
+
 module.exports = {
   DEFAULT_UNITS_PATH,
   normalizeUnitsCatalog,
   loadUnitsCatalog,
   getUnitsCatalog,
   hydrateUnitsCatalogWithAssets,
+  resolveUnitDefinitionId,
+  resolveRuntimeUnitVisual,
+  buildRuntimeUnitVisualMap,
 };
