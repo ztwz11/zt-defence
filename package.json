@@ -5,7 +5,9 @@
   "type": "commonjs",
   "description": "Script-driven RNG defense game runtime and tooling workspace",
   "scripts": {
-    "dev": "node tools/dev/run-dev-preview.js --watch",
+    "dev": "npm run dev:web",
+    "dev:web": "node tools/dev/run-web-dev-server.js --host=127.0.0.1 --port=5173",
+    "dev:headless": "node tools/dev/run-dev-preview.js --watch",
     "dev:once": "node tools/dev/run-dev-preview.js",
     "smoke": "node tools/smoke-replay-save-check.js",
     "test": "npm run test:runtime",

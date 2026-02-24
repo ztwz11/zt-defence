@@ -1,0 +1,149 @@
+:root {
+  --bg: #091217;
+  --panel: #12202a;
+  --line: #214356;
+  --text: #e9f5ff;
+  --sub: #98b8cb;
+  --accent: #2cc4a8;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: radial-gradient(circle at 20% -10%, #17364a 0%, var(--bg) 48%);
+  color: var(--text);
+  font-family: "Pretendard", "Noto Sans KR", "Segoe UI", sans-serif;
+}
+
+.layout {
+  width: min(1160px, 100%);
+  margin: 0 auto;
+  padding: 24px 16px 56px;
+}
+
+.header h1 {
+  margin: 0;
+  font-size: 30px;
+}
+
+.header p {
+  margin: 8px 0 0;
+  color: var(--sub);
+}
+
+.panel {
+  background: linear-gradient(180deg, rgba(18, 32, 42, 0.95) 0%, rgba(14, 24, 31, 0.96) 100%);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 14px;
+}
+
+.panel h2 {
+  margin: 0 0 12px;
+  font-size: 16px;
+  color: #c8ebff;
+}
+
+.controls form {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(120px, 1fr));
+  gap: 10px;
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--sub);
+}
+
+input {
+  height: 36px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: #0d1821;
+  color: var(--text);
+  padding: 0 10px;
+  font-size: 14px;
+}
+
+button {
+  height: 36px;
+  border: 0;
+  border-radius: 8px;
+  margin-top: auto;
+  background: linear-gradient(180deg, #45d7be 0%, var(--accent) 100%);
+  color: #082418;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.status {
+  margin: 10px 0 0;
+  color: var(--sub);
+  font-size: 13px;
+}
+
+.grid {
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+pre {
+  margin: 0;
+  background: #0b141b;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px;
+  color: #d4ecff;
+  overflow: auto;
+  min-height: 110px;
+}
+
+.table-wrap {
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 800px;
+}
+
+th,
+td {
+  border-bottom: 1px solid var(--line);
+  padding: 8px;
+  text-align: left;
+  font-size: 12px;
+}
+
+th {
+  color: #c1e6ff;
+  background: #0d1c26;
+  position: sticky;
+  top: 0;
+}
+
+tr:hover td {
+  background: rgba(33, 67, 86, 0.25);
+}
+
+@media (max-width: 900px) {
+  .controls form {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}

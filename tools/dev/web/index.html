@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>zt-defence Dev Web</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="layout">
+      <header class="header">
+        <h1>zt-defence 개발 미리보기</h1>
+        <p>run-orchestration-service 한 웨이브 실행 결과를 브라우저에서 확인합니다.</p>
+      </header>
+
+      <section class="panel controls">
+        <h2>실행 설정</h2>
+        <form id="run-form">
+          <label>
+            Chapter
+            <input id="chapter" name="chapter" value="chapter_1" />
+          </label>
+          <label>
+            Seed
+            <input id="seed" name="seed" type="number" value="2026" min="0" step="1" />
+          </label>
+          <label>
+            Wave
+            <input id="wave" name="wave" type="number" value="1" min="1" step="1" />
+          </label>
+          <label>
+            MaxWaves
+            <input id="maxWaves" name="maxWaves" type="number" value="20" min="1" step="1" />
+          </label>
+          <button id="run-button" type="submit">실행</button>
+        </form>
+        <p id="status" class="status">준비됨</p>
+      </section>
+
+      <section class="grid">
+        <article class="panel">
+          <h2>Summary</h2>
+          <pre id="summary"></pre>
+        </article>
+        <article class="panel">
+          <h2>HUD</h2>
+          <pre id="hud"></pre>
+        </article>
+      </section>
+
+      <section class="grid">
+        <article class="panel">
+          <h2>첫 Render Binding</h2>
+          <pre id="first-binding"></pre>
+        </article>
+        <article class="panel">
+          <h2>Runtime Unit Visual Map</h2>
+          <pre id="unit-map"></pre>
+        </article>
+      </section>
+
+      <section class="panel">
+        <h2>Render Events (최대 40개)</h2>
+        <div class="table-wrap">
+          <table id="events-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>time</th>
+                <th>type</th>
+                <th>srcId</th>
+                <th>animation</th>
+                <th>sheetPath</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <script src="./app.js" type="module"></script>
+  </body>
+</html>
