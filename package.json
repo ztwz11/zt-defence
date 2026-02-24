@@ -1,0 +1,20 @@
+{
+  "name": "zt-defence",
+  "version": "0.1.0",
+  "private": true,
+  "type": "commonjs",
+  "description": "Script-driven RNG defense game runtime and tooling workspace",
+  "scripts": {
+    "dev": "node tools/dev/run-dev-preview.js --watch",
+    "dev:once": "node tools/dev/run-dev-preview.js",
+    "smoke": "node tools/smoke-replay-save-check.js",
+    "test": "npm run test:runtime",
+    "test:runtime": "node tests/runtime/unit-asset-registry.test.js && node tests/runtime/units-catalog.test.js && node tests/runtime/headless-render-adapter.test.js && node tests/runtime/runtime-coordinator.test.js && node tests/runtime-app/m0-runtime-app.test.js && node tests/integration/module-e.integration.test.js",
+    "validate:schemas": "python tools/validate-schemas.py",
+    "check:release": "python tools/check-release-readiness.py",
+    "balance:sim": "node tools/balance/run-balance-sim.js --chapter=chapter_1 --seeds=50 --wave-max=10"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
