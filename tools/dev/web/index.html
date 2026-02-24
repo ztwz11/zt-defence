@@ -3,82 +3,107 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>zt-defence Dev Web</title>
+    <title>zt-defence 플레이 화면</title>
     <link rel="stylesheet" href="./styles.css" />
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js"></script>
   </head>
   <body>
-    <main class="layout">
-      <header class="header">
-        <h1>zt-defence 개발 미리보기</h1>
-        <p>run-orchestration-service 한 웨이브 실행 결과를 브라우저에서 확인합니다.</p>
+    <main class="shell">
+      <header class="topbar">
+        <div>
+          <h1>zt-defence 개발 플레이 화면</h1>
+          <p>로비부터 전투/보상/결과까지 한 번에 확인하는 디버그 클라이언트</p>
+        </div>
+        <button id="btn-go-lobby" class="ghost">로비</button>
       </header>
 
-      <section class="panel controls">
-        <h2>실행 설정</h2>
-        <form id="run-form">
-          <label>
-            Chapter
-            <input id="chapter" name="chapter" value="chapter_1" />
-          </label>
-          <label>
-            Seed
-            <input id="seed" name="seed" type="number" value="2026" min="0" step="1" />
-          </label>
-          <label>
-            Wave
-            <input id="wave" name="wave" type="number" value="1" min="1" step="1" />
-          </label>
-          <label>
-            MaxWaves
-            <input id="maxWaves" name="maxWaves" type="number" value="20" min="1" step="1" />
-          </label>
-          <button id="run-button" type="submit">실행</button>
-        </form>
-        <p id="status" class="status">준비됨</p>
-      </section>
-
-      <section class="grid">
-        <article class="panel">
-          <h2>Summary</h2>
-          <pre id="summary"></pre>
-        </article>
-        <article class="panel">
-          <h2>HUD</h2>
-          <pre id="hud"></pre>
+      <section id="screen-lobby" class="screen is-active">
+        <article class="panel center-card">
+          <h2>로비</h2>
+          <p>플레이 테스트를 시작하고 챕터를 선택하세요.</p>
+          <button id="btn-start-flow">플레이 시작</button>
         </article>
       </section>
 
-      <section class="grid">
+      <section id="screen-chapter" class="screen">
         <article class="panel">
-          <h2>첫 Render Binding</h2>
-          <pre id="first-binding"></pre>
-        </article>
-        <article class="panel">
-          <h2>Runtime Unit Visual Map</h2>
-          <pre id="unit-map"></pre>
+          <div class="row-between">
+            <h2>챕터 선택</h2>
+            <button id="btn-refresh-chapters" class="ghost">목록 새로고침</button>
+          </div>
+          <div id="chapter-list" class="chapter-list"></div>
         </article>
       </section>
 
-      <section class="panel">
-        <h2>Render Events (최대 40개)</h2>
-        <div class="table-wrap">
-          <table id="events-table">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>time</th>
-                <th>type</th>
-                <th>srcId</th>
-                <th>animation</th>
-                <th>sheetPath</th>
-              </tr>
-            </thead>
-            <tbody></tbody>
-          </table>
+      <section id="screen-run" class="screen">
+        <div class="run-layout">
+          <article class="panel stage-panel">
+            <div class="stage-toolbar">
+              <span id="status-pill" class="status-pill">준비</span>
+              <span id="stage-guide" class="stage-guide">
+                유닛을 드래그해 슬롯에 배치한 뒤 전투 시작을 누르세요.
+              </span>
+            </div>
+            <div id="game-root" class="game-root"></div>
+          </article>
+
+          <aside class="panel side-panel">
+            <h2>런 HUD</h2>
+            <dl class="hud-grid">
+              <dt>챕터</dt><dd id="hud-chapter">-</dd>
+              <dt>웨이브</dt><dd id="hud-wave">-</dd>
+              <dt>게이트 HP</dt><dd id="hud-gate-hp">-</dd>
+              <dt>골드</dt><dd id="hud-gold">-</dd>
+              <dt>단계</dt><dd id="hud-phase">-</dd>
+              <dt>상태</dt><dd id="hud-status">대기</dd>
+              <dt>소환 비용</dt><dd id="hud-summon-cost">4</dd>
+              <dt>리롤 비용</dt><dd id="hud-reroll-cost">2</dd>
+            </dl>
+
+            <div class="control-group row">
+              <button id="btn-summon">소환</button>
+              <button id="btn-reroll" class="ghost">리롤</button>
+            </div>
+            <div class="control-group row">
+              <button id="btn-start-combat" class="accent">전투 시작</button>
+              <button id="btn-speed" class="ghost">속도 1x</button>
+            </div>
+
+            <h3>상점</h3>
+            <div id="shop-list" class="shop-list"></div>
+
+            <h3>보드 유닛</h3>
+            <ul id="board-unit-list" class="compact-list"></ul>
+
+            <h3>적용 효과</h3>
+            <ul id="reward-effect-list" class="compact-list"></ul>
+
+            <h3>로그</h3>
+            <pre id="debug-log" class="debug-log"></pre>
+          </aside>
         </div>
       </section>
     </main>
 
-    <script src="./app.js" type="module"></script>
+    <section id="modal-reward" class="modal">
+      <article class="panel modal-card">
+        <h2>보상 선택</h2>
+        <p>웨이브를 클리어했습니다. 다음 웨이브를 위해 1개를 선택하세요.</p>
+        <div id="reward-option-list" class="reward-option-list"></div>
+      </article>
+    </section>
+
+    <section id="modal-result" class="modal">
+      <article class="panel modal-card">
+        <h2 id="result-title">결과</h2>
+        <pre id="result-summary"></pre>
+        <div class="control-group row">
+          <button id="btn-retry" class="accent">다시 시작</button>
+          <button id="btn-result-lobby" class="ghost">로비로</button>
+        </div>
+      </article>
+    </section>
+
+    <script type="module" src="./app.js"></script>
   </body>
 </html>
