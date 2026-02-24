@@ -183,10 +183,15 @@ PY
         id: commit
 
       - name: Push threshold updates
-        if: steps.commit.outputs.has_changes != 'false' && inputs.push_changes
+        if: steps.commit.outputs.has_changes != 'false' && inputs.push_changes && vars.ENABLE_THRESHOLD_WORKFLOW_PUSH == 'true'
         run: |
           set -euo pipefail
           git push origin "HEAD:${{ inputs.target_ref }}"
+
+      - name: Push blocked by policy
+        if: steps.commit.outputs.has_changes != 'false' && inputs.push_changes && vars.ENABLE_THRESHOLD_WORKFLOW_PUSH != 'true'
+        run: |
+          echo "Push is blocked. Set repository variable ENABLE_THRESHOLD_WORKFLOW_PUSH=true to allow workflow push."
 
       - name: Upload threshold apply artifacts
         if: always()
