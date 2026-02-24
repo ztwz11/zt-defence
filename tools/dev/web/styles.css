@@ -28,7 +28,7 @@ body {
 }
 
 .shell {
-  width: min(1400px, 100%);
+  width: min(1760px, 100%);
   margin: 0 auto;
   padding: 18px 16px 32px;
 }
@@ -111,12 +111,12 @@ body {
 
 .run-layout {
   display: grid;
-  grid-template-columns: 1fr 360px;
+  grid-template-columns: minmax(0, 1fr) 420px;
   gap: 14px;
 }
 
 .stage-panel {
-  min-height: 664px;
+  min-height: 824px;
 }
 
 .stage-toolbar {
@@ -145,7 +145,8 @@ body {
 
 .game-root {
   width: 100%;
-  min-height: 600px;
+  min-height: 760px;
+  aspect-ratio: 1280 / 760;
   border: 1px solid var(--line);
   border-radius: 10px;
   background: #071017;
@@ -263,11 +264,22 @@ button:disabled {
   gap: 8px;
 }
 
-.board-row button {
-  width: 58px;
+.board-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.board-actions button {
+  width: 52px;
   height: 26px;
   font-size: 12px;
   padding: 0;
+}
+
+.board-actions button.upgrade {
+  color: #082116;
+  background: linear-gradient(180deg, #92f1dc 0%, #4ed9bb 100%);
 }
 
 .debug-log {
@@ -342,6 +354,10 @@ button:disabled {
   }
 
   .stage-panel {
-    min-height: 420px;
+    min-height: 520px;
+  }
+
+  .game-root {
+    min-height: 520px;
   }
 }

@@ -92,6 +92,10 @@ function toNonNegativeInteger(value, fallback) {
   return Math.max(0, Math.floor(toFiniteNumber(value, fallback)));
 }
 
+function normalizeUpgradeLevel(value) {
+  return Math.min(3, toNonNegativeInteger(value, 0));
+}
+
 function pickText(value, fallback) {
   if (typeof value !== 'string') {
     return fallback;
@@ -218,9 +222,10 @@ function resolveDamageType(unitDefinition) {
   return 'physical';
 }
 
-function applyRewardEffectsToStats(unitStats, rewardEffects) {
+function applyRewardEffectsToStats(unitStats, rewardEffects, upgradeLevel) {
   const sourceStats = unitStats && typeof unitStats === 'object' ? unitStats : {};
   const effects = Array.isArray(rewardEffects) ? rewardEffects : [];
+  const normalizedUpgradeLevel = normalizeUpgradeLevel(upgradeLevel);
 
   let atkMultiplier = 1;
   let atkSpeedBonus = 0;
@@ -239,16 +244,30 @@ function applyRewardEffectsToStats(unitStats, rewardEffects) {
     }
   }
 
+  const upgradeAtkMultiplier = 1 + normalizedUpgradeLevel * 0.22;
+  const upgradeAtkSpeedBonus = normalizedUpgradeLevel * 0.05;
+  const upgradeCritChanceBonus = normalizedUpgradeLevel * 0.03;
+
   return {
-    atk: Math.max(1, toFiniteNumber(sourceStats.atk, 10) * atkMultiplier),
-    atkSpeed: Math.max(0.2, toFiniteNumber(sourceStats.atkSpeed, 1) + atkSpeedBonus),
-    critChance: Math.min(0.95, Math.max(0, toFiniteNumber(sourceStats.critChance, 0.05) + critChanceBonus)),
+    atk: Math.max(1, toFiniteNumber(sourceStats.atk, 10) * atkMultiplier * upgradeAtkMultiplier),
+    atkSpeed: Math.max(
+      0.2,
+      toFiniteNumber(sourceStats.atkSpeed, 1) + atkSpeedBonus + upgradeAtkSpeedBonus
+    ),
+    critChance: Math.min(
+      0.98,
+      Math.max(
+        0,
+        toFiniteNumber(sourceStats.critChance, 0.05) + critChanceBonus + upgradeCritChanceBonus
+      )
+    ),
     critMultiplier: Math.max(1, toFiniteNumber(sourceStats.critMultiplier, 1.5)),
   };
 }
 
-function toSimulationUnit(definition, instanceId, rewardEffects) {
-  const stats = applyRewardEffectsToStats(definition?.stats, rewardEffects);
+function toSimulationUnit(definition, instanceId, rewardEffects, upgradeLevel) {
+  const normalizedUpgradeLevel = normalizeUpgradeLevel(upgradeLevel);
+  const stats = applyRewardEffectsToStats(definition?.stats, rewardEffects, normalizedUpgradeLevel);
   const tags = Array.isArray(definition?.tags) ? definition.tags : [];
   const onHitStatuses = tags.includes('element:fire')
     ? [
@@ -270,6 +289,7 @@ function toSimulationUnit(definition, instanceId, rewardEffects) {
     critChance: stats.critChance,
     critMultiplier: stats.critMultiplier,
     onHitStatuses,
+    upgradeLevel: normalizedUpgradeLevel,
   };
 }
 
@@ -286,7 +306,9 @@ function deriveSimulationUnitsFromBoard(boardUnits, unitsCatalog, rewardEffects)
       continue;
     }
     const instanceId = pickText(boardUnit?.instanceId, `${unitId}_${index + 1}`);
-    simulationUnits.push(toSimulationUnit(definition, instanceId, rewardEffects));
+    simulationUnits.push(
+      toSimulationUnit(definition, instanceId, rewardEffects, boardUnit?.upgradeLevel)
+    );
   }
 
   return simulationUnits;

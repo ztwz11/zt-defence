@@ -1,18 +1,34 @@
-const STAGE_WIDTH = 960;
-const STAGE_HEIGHT = 560;
+const STAGE_WIDTH = 1280;
+const STAGE_HEIGHT = 760;
 
-const SLOT_POSITIONS = Object.freeze([
-  { x: 180, y: 145 },
-  { x: 300, y: 145 },
-  { x: 420, y: 145 },
-  { x: 180, y: 275 },
-  { x: 300, y: 275 },
-  { x: 420, y: 275 },
-]);
+const SLOT_COLUMNS = 3;
+const SLOT_ROWS = 2;
+const SLOT_X_START = 250;
+const SLOT_Y_START = 210;
+const SLOT_X_GAP = 170;
+const SLOT_Y_GAP = 190;
 
-const BENCH_Y = 500;
-const BENCH_START_X = 120;
-const BENCH_GAP = 110;
+const BENCH_Y = 690;
+const BENCH_START_X = 150;
+const BENCH_GAP = 130;
+
+const ENEMY_SPAWN_X = 1180;
+const ENEMY_TARGET_X = 760;
+
+function buildSlotPositions() {
+  const positions = [];
+  for (let row = 0; row < SLOT_ROWS; row += 1) {
+    for (let column = 0; column < SLOT_COLUMNS; column += 1) {
+      positions.push({
+        x: SLOT_X_START + column * SLOT_X_GAP,
+        y: SLOT_Y_START + row * SLOT_Y_GAP,
+      });
+    }
+  }
+  return Object.freeze(positions);
+}
+
+const SLOT_POSITIONS = buildSlotPositions();
 
 function normalizeString(value, fallback = '') {
   if (typeof value !== 'string') {
@@ -27,12 +43,16 @@ function toFiniteNumber(value, fallback) {
   return Number.isFinite(numeric) ? numeric : fallback;
 }
 
+function toNonNegativeInteger(value, fallback = 0) {
+  return Math.max(0, Math.floor(toFiniteNumber(value, fallback)));
+}
+
 function shortName(name, fallback) {
   const source = normalizeString(name, fallback);
-  if (source.length <= 7) {
+  if (source.length <= 8) {
     return source;
   }
-  return `${source.slice(0, 7)}…`;
+  return `${source.slice(0, 8)}…`;
 }
 
 function hashCode(value) {
@@ -45,7 +65,7 @@ function hashCode(value) {
 }
 
 function resolveEnemyLaneY(enemyInstanceId) {
-  const lanes = [105, 170, 235, 300, 365];
+  const lanes = [130, 200, 270, 340, 410];
   return lanes[hashCode(enemyInstanceId) % lanes.length];
 }
 
@@ -73,7 +93,7 @@ function pickSlotByPosition(x, y) {
     }
   }
 
-  return bestDistance <= 62 ? best : null;
+  return bestDistance <= 74 ? best : null;
 }
 
 function resolveRarityColor(unitDef) {
@@ -87,92 +107,132 @@ function resolveRarityColor(unitDef) {
   return 0x95c66f;
 }
 
-function buildTokenVisual(scene, unitDef) {
+function resolveLevelText(upgradeLevel) {
+  const level = toNonNegativeInteger(upgradeLevel, 0) + 1;
+  return `Lv.${level}`;
+}
+
+function buildTokenVisual(scene, unitDef, upgradeLevel) {
   const container = scene.add.container(0, 0);
   const rarityColor = resolveRarityColor(unitDef);
 
-  const frame = scene.add.rectangle(0, -6, 84, 84, 0x000000, 0);
-  frame.setStrokeStyle(2, rarityColor, 0.9);
+  const frame = scene.add.rectangle(0, -8, 96, 98, 0x000000, 0);
+  frame.setStrokeStyle(2, rarityColor, 0.92);
+
+  const levelBadge = scene.add.rectangle(0, -56, 50, 18, 0x11222f, 0.92);
+  levelBadge.setStrokeStyle(1, 0x78d9c0, 0.65);
+  levelBadge.name = 'levelBadge';
+
+  const levelLabel = scene.add.text(0, -56, resolveLevelText(upgradeLevel), {
+    fontFamily: 'SUIT Variable, Pretendard, sans-serif',
+    fontSize: '11px',
+    color: '#b9fff1',
+    fontStyle: 'bold',
+  });
+  levelLabel.setOrigin(0.5, 0.5);
+  levelLabel.name = 'levelLabel';
+
   container.add(frame);
 
   if (normalizeString(unitDef?.id) === 'hero_chibi_01' && scene.textures.exists('hero_chibi_01_idle')) {
-    const sprite = scene.add.sprite(0, -8, 'hero_chibi_01_idle', 0);
-    sprite.setScale(0.1);
+    const sprite = scene.add.sprite(0, -10, 'hero_chibi_01_idle', 0);
+    sprite.setScale(0.12);
     if (scene.anims.exists('hero_chibi_01_idle_loop')) {
       sprite.play('hero_chibi_01_idle_loop');
     }
     container.add(sprite);
   } else {
-    const icon = scene.add.circle(0, -8, 30, rarityColor, 0.22);
+    const icon = scene.add.circle(0, -10, 33, rarityColor, 0.25);
     icon.setStrokeStyle(2, rarityColor, 0.85);
-    const labelCore = scene.add.text(0, -8, shortName(unitDef?.name, unitDef?.id || '유닛'), {
+    const labelCore = scene.add.text(0, -10, shortName(unitDef?.name, unitDef?.id || '유닛'), {
       fontFamily: 'SUIT Variable, Pretendard, sans-serif',
       fontSize: '12px',
       color: '#e9fcff',
       align: 'center',
-      wordWrap: { width: 58 },
+      wordWrap: { width: 62 },
     });
     labelCore.setOrigin(0.5, 0.5);
     container.add(icon);
     container.add(labelCore);
   }
 
-  const label = scene.add.text(0, 40, shortName(unitDef?.name, unitDef?.id || '유닛'), {
+  const nameLabel = scene.add.text(0, 44, shortName(unitDef?.name, unitDef?.id || '유닛'), {
     fontFamily: 'SUIT Variable, Pretendard, sans-serif',
     fontSize: '11px',
     color: '#d6e6ef',
   });
-  label.setOrigin(0.5, 0.5);
-  container.add(label);
+  nameLabel.setOrigin(0.5, 0.5);
+  nameLabel.name = 'nameLabel';
 
-  container.setSize(88, 96);
+  container.add(levelBadge);
+  container.add(levelLabel);
+  container.add(nameLabel);
+
+  container.setSize(100, 112);
   container.setDepth(10);
   container.setInteractive(
-    new window.Phaser.Geom.Rectangle(-44, -48, 88, 96),
+    new window.Phaser.Geom.Rectangle(-50, -56, 100, 112),
     window.Phaser.Geom.Rectangle.Contains
   );
 
   return container;
 }
 
+function updateTokenVisual(token, unitDef, upgradeLevel) {
+  if (!token) {
+    return;
+  }
+
+  const levelLabel = token.getByName('levelLabel');
+  if (levelLabel) {
+    levelLabel.setText(resolveLevelText(upgradeLevel));
+  }
+
+  const nameLabel = token.getByName('nameLabel');
+  if (nameLabel) {
+    nameLabel.setText(shortName(unitDef?.name, unitDef?.id || '유닛'));
+  }
+}
+
 function createBackground(scene) {
   const base = scene.add.rectangle(0, 0, STAGE_WIDTH, STAGE_HEIGHT, 0x061217, 1);
   base.setOrigin(0, 0);
 
-  const lane = scene.add.rectangle(0, 0, STAGE_WIDTH, 430, 0x0a1d22, 1);
+  const laneHeight = 560;
+  const lane = scene.add.rectangle(0, 0, STAGE_WIDTH, laneHeight, 0x0a1d22, 1);
   lane.setOrigin(0, 0);
 
-  const bench = scene.add.rectangle(0, 430, STAGE_WIDTH, 130, 0x08131a, 1);
+  const bench = scene.add.rectangle(0, laneHeight, STAGE_WIDTH, STAGE_HEIGHT - laneHeight, 0x08131a, 1);
   bench.setOrigin(0, 0);
 
-  const gate = scene.add.rectangle(520, 0, 430, 430, 0x11212e, 0.35);
-  gate.setOrigin(0, 0);
+  const enemyZone = scene.add.rectangle(700, 0, 560, laneHeight, 0x11212e, 0.33);
+  enemyZone.setOrigin(0, 0);
 
   const grid = scene.add.graphics();
-  grid.lineStyle(1, 0x25404a, 0.35);
+  grid.lineStyle(1, 0x25404a, 0.34);
   for (let x = 40; x < STAGE_WIDTH; x += 40) {
-    grid.lineBetween(x, 0, x, 430);
+    grid.lineBetween(x, 0, x, laneHeight);
   }
-  for (let y = 20; y < 430; y += 40) {
+  for (let y = 20; y < laneHeight; y += 40) {
     grid.lineBetween(0, y, STAGE_WIDTH, y);
   }
 
-  const benchLabel = scene.add.text(16, 442, '대기열 (드래그해서 슬롯에 배치)', {
+  const benchLabel = scene.add.text(18, laneHeight + 16, '대기열 (드래그해서 슬롯에 배치)', {
     fontFamily: 'SUIT Variable, Pretendard, sans-serif',
-    fontSize: '13px',
+    fontSize: '14px',
     color: '#98b5c5',
   });
 
-  const enemyLabel = scene.add.text(550, 20, '적 진입 구간', {
+  const enemyLabel = scene.add.text(730, 20, '적 진입 구간', {
     fontFamily: 'SUIT Variable, Pretendard, sans-serif',
-    fontSize: '13px',
+    fontSize: '14px',
     color: '#98b5c5',
   });
 
   void base;
   void lane;
   void bench;
-  void gate;
+  void enemyZone;
   void benchLabel;
   void enemyLabel;
 }
@@ -225,24 +285,26 @@ export function createPlaySceneController(options = {}) {
       createBackground(this);
 
       this.slotMarkers = SLOT_POSITIONS.map((slot, index) => {
-        const marker = this.add.rectangle(slot.x, slot.y, 96, 96, 0x3dd6b0, 0.08);
+        const marker = this.add.rectangle(slot.x, slot.y, 112, 112, 0x3dd6b0, 0.08);
         marker.setStrokeStyle(2, 0x3dd6b0, 0.35);
-        const label = this.add.text(slot.x, slot.y + 52, `슬롯 ${index + 1}`, {
+
+        const label = this.add.text(slot.x, slot.y + 60, `슬롯 ${index + 1}`, {
           fontFamily: 'SUIT Variable, Pretendard, sans-serif',
-          fontSize: '11px',
+          fontSize: '12px',
           color: '#7ea8bd',
         });
         label.setOrigin(0.5, 0.5);
+
         return marker;
       });
 
-      this.bannerText = this.add.text(16, 16, '전투 대기', {
+      this.bannerText = this.add.text(18, 16, '전투 대기', {
         fontFamily: 'SUIT Variable, Pretendard, sans-serif',
-        fontSize: '16px',
+        fontSize: '17px',
         color: '#b1f5e6',
       });
 
-      this.resultText = this.add.text(16, 38, '', {
+      this.resultText = this.add.text(18, 40, '', {
         fontFamily: 'SUIT Variable, Pretendard, sans-serif',
         fontSize: '12px',
         color: '#9dbccf',
@@ -336,13 +398,14 @@ export function createPlaySceneController(options = {}) {
       this.resultText.setText('');
     }
 
-    ensureToken(instanceId, unitId) {
+    ensureToken(instanceId, boardUnit) {
       if (this.unitObjects.has(instanceId)) {
         return this.unitObjects.get(instanceId);
       }
 
+      const unitId = normalizeString(boardUnit?.unitId);
       const unitDef = this.unitsById?.[unitId] || { id: unitId, name: unitId, rarity: 'T1' };
-      const token = buildTokenVisual(this, unitDef);
+      const token = buildTokenVisual(this, unitDef, boardUnit?.upgradeLevel);
       token.setData('instanceId', instanceId);
       token.setData('unitId', unitId);
       this.input.setDraggable(token);
@@ -358,6 +421,7 @@ export function createPlaySceneController(options = {}) {
         instanceId: normalizeString(unit?.instanceId),
         unitId: normalizeString(unit?.unitId),
         slotIndex: isSlotIndex(unit?.slotIndex) ? unit.slotIndex : null,
+        upgradeLevel: toNonNegativeInteger(unit?.upgradeLevel, 0),
       }));
       this.unitsById = unitsById && typeof unitsById === 'object' ? unitsById : {};
 
@@ -379,7 +443,13 @@ export function createPlaySceneController(options = {}) {
         if (!boardUnit.instanceId || !boardUnit.unitId) {
           continue;
         }
-        this.ensureToken(boardUnit.instanceId, boardUnit.unitId);
+        const token = this.ensureToken(boardUnit.instanceId, boardUnit);
+        const unitDef = this.unitsById?.[boardUnit.unitId] || {
+          id: boardUnit.unitId,
+          name: boardUnit.unitId,
+          rarity: 'T1',
+        };
+        updateTokenVisual(token, unitDef, boardUnit.upgradeLevel);
       }
 
       const waitingUnits = [];
@@ -391,16 +461,18 @@ export function createPlaySceneController(options = {}) {
 
       waitingUnits.sort((left, right) => left.instanceId.localeCompare(right.instanceId));
 
-      for (let index = 0; index < this.boardUnits.length; index += 1) {
-        const boardUnit = this.boardUnits[index];
+      for (const boardUnit of this.boardUnits) {
         const token = this.unitObjects.get(boardUnit.instanceId);
         if (!token) {
           continue;
         }
 
+        const waitingIndex = waitingUnits.findIndex(
+          (entry) => entry.instanceId === boardUnit.instanceId
+        );
         const position = isSlotIndex(boardUnit.slotIndex)
           ? SLOT_POSITIONS[boardUnit.slotIndex]
-          : createBenchPosition(waitingUnits.findIndex((entry) => entry.instanceId === boardUnit.instanceId));
+          : createBenchPosition(Math.max(0, waitingIndex));
 
         this.tweens.add({
           targets: token,
@@ -413,13 +485,16 @@ export function createPlaySceneController(options = {}) {
     }
 
     spawnEnemy(instanceId, enemyId) {
-      const enemyInstanceId = normalizeString(instanceId, `${enemyId}#${this.enemyObjects.size + 1}`);
+      const enemyInstanceId = normalizeString(
+        instanceId,
+        `${enemyId}#${this.enemyObjects.size + 1}`
+      );
       if (this.enemyObjects.has(enemyInstanceId)) {
         return;
       }
 
       const y = resolveEnemyLaneY(enemyInstanceId);
-      const container = this.add.container(840, y);
+      const container = this.add.container(ENEMY_SPAWN_X, y);
 
       const body = this.add.circle(0, 0, 24, 0xf59a6e, 0.9);
       body.setStrokeStyle(2, 0xffceb2, 0.9);
@@ -438,8 +513,8 @@ export function createPlaySceneController(options = {}) {
 
       this.tweens.add({
         targets: container,
-        x: 560,
-        duration: 6500,
+        x: ENEMY_TARGET_X,
+        duration: 6800,
         ease: 'Linear',
       });
     }
@@ -484,8 +559,15 @@ export function createPlaySceneController(options = {}) {
       }
 
       if (sourceToken && targetEnemy) {
-        const projectile = this.add.circle(sourceToken.x, sourceToken.y - 16, 4, isCrit ? 0xffde6e : 0x7dd6ff, 0.9);
+        const projectile = this.add.circle(
+          sourceToken.x,
+          sourceToken.y - 16,
+          4,
+          isCrit ? 0xffde6e : 0x7dd6ff,
+          0.9
+        );
         this.combatFx.push(projectile);
+
         this.tweens.add({
           targets: projectile,
           x: targetEnemy.x,
@@ -505,6 +587,7 @@ export function createPlaySceneController(options = {}) {
         const flashColor = isCrit ? 0xfff199 : 0xff9aa9;
         const hitFx = this.add.circle(targetEnemy.x, targetEnemy.y, 28, flashColor, 0.38);
         this.combatFx.push(hitFx);
+
         this.tweens.add({
           targets: hitFx,
           alpha: 0,
@@ -528,6 +611,7 @@ export function createPlaySceneController(options = {}) {
         });
         damageText.setOrigin(0.5, 0.5);
         this.combatFx.push(damageText);
+
         this.tweens.add({
           targets: damageText,
           y: damageText.y - 26,
@@ -615,12 +699,16 @@ export function createPlaySceneController(options = {}) {
   const scene = new DevPlayScene();
   runtime.game = new window.Phaser.Game({
     type: window.Phaser.AUTO,
-    width: STAGE_WIDTH,
-    height: STAGE_HEIGHT,
     parent: rootElement,
     backgroundColor: '#071217',
     antialias: true,
     scene: [scene],
+    scale: {
+      mode: window.Phaser.Scale.FIT,
+      autoCenter: window.Phaser.Scale.CENTER_BOTH,
+      width: STAGE_WIDTH,
+      height: STAGE_HEIGHT,
+    },
     fps: {
       target: 60,
       forceSetTimeOut: true,

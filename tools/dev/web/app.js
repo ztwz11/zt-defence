@@ -19,6 +19,9 @@ const REWARD_POOL = Object.freeze([
 ]);
 
 const SPEED_STEPS = Object.freeze([1, 2, 4]);
+const MAX_UPGRADE_LEVEL = 3;
+const BASE_UPGRADE_COST = 3;
+const UPGRADE_COST_STEP = 2;
 
 function byId(id) {
   return document.getElementById(id);
@@ -39,6 +42,10 @@ function toFiniteNumber(value, fallback) {
 
 function toPositiveInteger(value, fallback) {
   return Math.max(1, Math.floor(toFiniteNumber(value, fallback)));
+}
+
+function toNonNegativeInteger(value, fallback = 0) {
+  return Math.max(0, Math.floor(toFiniteNumber(value, fallback)));
 }
 
 function pickRandom(source) {
@@ -75,6 +82,19 @@ function koreanStatus(status) {
     return '패배';
   }
   return '대기';
+}
+
+function getUpgradeCost(currentUpgradeLevel) {
+  const normalizedLevel = toNonNegativeInteger(currentUpgradeLevel, 0);
+  return BASE_UPGRADE_COST + normalizedLevel * UPGRADE_COST_STEP;
+}
+
+function getDisplayLevel(upgradeLevel) {
+  return toNonNegativeInteger(upgradeLevel, 0) + 1;
+}
+
+function canUpgrade(boardUnit) {
+  return toNonNegativeInteger(boardUnit?.upgradeLevel, 0) < MAX_UPGRADE_LEVEL;
 }
 
 async function fetchJson(url, options = {}) {
@@ -173,7 +193,7 @@ function appendLog(message, details) {
 
   const current = ui.debugLog.textContent.trim();
   const merged = current.length > 0 ? `${current}\n${lines.join('\n')}` : lines.join('\n');
-  const sliced = merged.split('\n').slice(-160).join('\n');
+  const sliced = merged.split('\n').slice(-180).join('\n');
   ui.debugLog.textContent = sliced;
   ui.debugLog.scrollTop = ui.debugLog.scrollHeight;
 }
@@ -347,7 +367,9 @@ function renderBoardUnitList() {
     return;
   }
 
-  const sorted = state.boardUnits.slice().sort((left, right) => left.instanceId.localeCompare(right.instanceId));
+  const sorted = state.boardUnits
+    .slice()
+    .sort((left, right) => left.instanceId.localeCompare(right.instanceId));
 
   for (const boardUnit of sorted) {
     const item = document.createElement('li');
@@ -358,15 +380,41 @@ function renderBoardUnitList() {
     const slotText = Number.isInteger(boardUnit.slotIndex)
       ? `슬롯 ${boardUnit.slotIndex + 1}`
       : '대기열';
-    label.textContent = `${getUnitName(boardUnit.unitId)} (${slotText})`;
+    const displayLevel = getDisplayLevel(boardUnit.upgradeLevel);
+    label.textContent = `${getUnitName(boardUnit.unitId)} Lv.${displayLevel} (${slotText})`;
+
+    const actions = document.createElement('div');
+    actions.className = 'board-actions';
+
+    const upgradeButton = document.createElement('button');
+    upgradeButton.className = 'upgrade';
+    upgradeButton.textContent = '강화';
+    upgradeButton.dataset.upgradeInstanceId = boardUnit.instanceId;
+
+    const upgradeCost = getUpgradeCost(boardUnit.upgradeLevel);
+    if (!canUpgrade(boardUnit)) {
+      upgradeButton.disabled = true;
+      upgradeButton.title = '최대 레벨입니다.';
+    } else if (state.isCombatRunning) {
+      upgradeButton.disabled = true;
+      upgradeButton.title = '전투 중에는 강화할 수 없습니다.';
+    } else if (state.gold < upgradeCost) {
+      upgradeButton.disabled = true;
+      upgradeButton.title = `골드 부족 (필요 ${upgradeCost})`;
+    } else {
+      upgradeButton.title = `강화 비용 ${upgradeCost}`;
+    }
 
     const removeButton = document.createElement('button');
     removeButton.className = 'ghost';
     removeButton.textContent = '판매';
     removeButton.dataset.removeInstanceId = boardUnit.instanceId;
+    removeButton.disabled = state.isCombatRunning;
 
+    actions.appendChild(upgradeButton);
+    actions.appendChild(removeButton);
     row.appendChild(label);
-    row.appendChild(removeButton);
+    row.appendChild(actions);
     item.appendChild(row);
     ui.boardUnitList.appendChild(item);
   }
@@ -426,6 +474,7 @@ function setControlEnabled(enabled) {
   ui.btnSummon.disabled = disabled;
   ui.btnReroll.disabled = disabled;
   ui.btnStartCombat.disabled = disabled;
+  renderBoardUnitList();
 }
 
 function hydrateFromRunResult(runValue) {
@@ -485,6 +534,7 @@ async function addBoardUnit(unitId, preferredSlot) {
     instanceId,
     unitId: normalizedUnitId,
     slotIndex,
+    upgradeLevel: 0,
   });
 
   renderBoardUnitList();
@@ -492,6 +542,10 @@ async function addBoardUnit(unitId, preferredSlot) {
 }
 
 async function removeBoardUnit(instanceId) {
+  if (state.isCombatRunning) {
+    return;
+  }
+
   const index = state.boardUnits.findIndex((unit) => unit.instanceId === instanceId);
   if (index < 0) {
     return;
@@ -503,6 +557,41 @@ async function removeBoardUnit(instanceId) {
   renderBoardUnitList();
   await syncSceneBoard();
   appendLog(`유닛 판매: ${getUnitName(removed.unitId)} (+1 골드)`);
+}
+
+async function upgradeBoardUnit(instanceId) {
+  if (state.isCombatRunning) {
+    return;
+  }
+
+  const boardUnit = findBoardUnit(instanceId);
+  if (!boardUnit) {
+    return;
+  }
+
+  if (!canUpgrade(boardUnit)) {
+    appendLog(`${getUnitName(boardUnit.unitId)}는 이미 최대 레벨입니다.`);
+    return;
+  }
+
+  const cost = getUpgradeCost(boardUnit.upgradeLevel);
+  if (state.gold < cost) {
+    appendLog(`강화 실패: 골드가 부족합니다. (필요 ${cost})`);
+    return;
+  }
+
+  state.gold -= cost;
+  boardUnit.upgradeLevel = toNonNegativeInteger(boardUnit.upgradeLevel, 0) + 1;
+
+  renderHud();
+  renderBoardUnitList();
+  await syncSceneBoard();
+
+  appendLog(
+    `강화 완료: ${getUnitName(boardUnit.unitId)} -> Lv.${getDisplayLevel(
+      boardUnit.upgradeLevel
+    )} (비용 ${cost})`
+  );
 }
 
 async function summonFromShop(shopIndex) {
@@ -638,6 +727,7 @@ async function runCombat() {
     boardUnits: deployed.map((unit) => ({
       instanceId: unit.instanceId,
       unitId: unit.unitId,
+      upgradeLevel: toNonNegativeInteger(unit.upgradeLevel, 0),
     })),
     rewardEffects: state.rewardEffects.map((effect) => ({ id: effect.id })),
   };
@@ -817,12 +907,16 @@ function bindEvents() {
       return;
     }
 
-    const instanceId = normalizeString(target.dataset.removeInstanceId);
-    if (!instanceId) {
+    const upgradeInstanceId = normalizeString(target.dataset.upgradeInstanceId);
+    if (upgradeInstanceId) {
+      await upgradeBoardUnit(upgradeInstanceId);
       return;
     }
 
-    await removeBoardUnit(instanceId);
+    const removeInstanceId = normalizeString(target.dataset.removeInstanceId);
+    if (removeInstanceId) {
+      await removeBoardUnit(removeInstanceId);
+    }
   });
 
   ui.rewardOptionList.addEventListener('click', async (event) => {
