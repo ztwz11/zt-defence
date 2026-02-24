@@ -1,8 +1,8 @@
 {
   "version": "0.1.0",
-  "frameWidth": 1024,
-  "frameHeight": 1024,
-  "frameCount": 4,
+  "frameWidth": 430,
+  "frameHeight": 599,
+  "frameCount": 6,
   "fps": 12,
   "loop": false,
   "anchor": {
@@ -14,32 +14,48 @@
       "index": 0,
       "x": 0,
       "y": 0,
-      "w": 1024,
-      "h": 1024,
+      "w": 430,
+      "h": 599,
       "durationMs": 83
     },
     {
       "index": 1,
-      "x": 1024,
+      "x": 430,
       "y": 0,
-      "w": 1024,
-      "h": 1024,
+      "w": 430,
+      "h": 599,
       "durationMs": 83
     },
     {
       "index": 2,
-      "x": 2048,
+      "x": 860,
       "y": 0,
-      "w": 1024,
-      "h": 1024,
+      "w": 430,
+      "h": 599,
       "durationMs": 83
     },
     {
       "index": 3,
-      "x": 3072,
+      "x": 1290,
       "y": 0,
-      "w": 1024,
-      "h": 1024,
+      "w": 430,
+      "h": 599,
+      "durationMs": 83
+    },
+    {
+      "index": 4,
+      "x": 1720,
+      "y": 0,
+      "w": 430,
+      "h": 599,
+      "durationMs": 83
+    },
+    {
+      "index": 5,
+      "x": 2150,
+      "y": 0,
+      "w": 430,
+      "h": 599,
       "durationMs": 83
     }
   ]
